@@ -4,6 +4,8 @@ interface SearchFilters {
   query: string;
   location: string;
   dateRange: string;
+  price: string;
+  format: string;
 }
 
 interface SearchContextType {
@@ -18,6 +20,8 @@ const defaultFilters: SearchFilters = {
   query: '',
   location: 'All Locations',
   dateRange: 'Any Date',
+  price: 'All Prices',
+  format: 'All Formats',
 };
 
 export function SearchProvider({ children }: { children: ReactNode }) {

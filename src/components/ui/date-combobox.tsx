@@ -45,11 +45,12 @@ export function DateCombobox({ value, onChange }: DateComboboxProps) {
             'w-full border-none bg-transparent py-0 pr-8 pl-0 text-sm text-foreground',
             'focus:outline-none focus:ring-0 placeholder:text-muted-foreground'
           )}
-          displayValue={(date: typeof dateRanges[0]) => query !== '' ? query : date?.name}
+          displayValue={(date: typeof dateRanges[0]) => query !== '' ? query : (date?.name === 'Any Date' ? '' : date?.name)}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={(event) => {
-            event.target.select()
-            setQuery('')
+            if (selected.name === 'Any Date') {
+              setQuery('')
+            }
           }}
           placeholder="Any Date"
         />

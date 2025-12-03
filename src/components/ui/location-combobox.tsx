@@ -45,11 +45,12 @@ export function LocationCombobox({ value, onChange }: LocationComboboxProps) {
             'w-full border-none bg-transparent py-0 pr-8 pl-0 text-sm text-foreground',
             'focus:outline-none focus:ring-0 placeholder:text-muted-foreground'
           )}
-          displayValue={(location: typeof locations[0]) => query !== '' ? query : location?.name}
+          displayValue={(location: typeof locations[0]) => query !== '' ? query : (location?.name === 'All Locations' ? '' : location?.name)}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={(event) => {
-            event.target.select()
-            setQuery('')
+            if (selected.name === 'All Locations') {
+              setQuery('')
+            }
           }}
           placeholder="All Locations"
         />

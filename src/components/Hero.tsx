@@ -130,12 +130,16 @@ export const Hero = () => {
             className="mt-8 flex flex-wrap items-center justify-center gap-3"
           >
             <span className="text-sm text-muted-foreground">Popular:</span>
-            {["Demo Days", "Hackathons", "AI Events", "Web3", "Free Events"].map(
+            {["Demo Day", "Hackathon", "AI Events", "Web3", "Free Events"].map(
               (tag) => (
                 <motion.button
                   key={tag}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    updateFilter("query", tag);
+                    scrollToEvents();
+                  }}
                   className="rounded-full border border-glass-border bg-glass/30 px-4 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-glass/50 hover:text-foreground"
                 >
                   {tag}

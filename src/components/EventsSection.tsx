@@ -7,11 +7,12 @@ import { SlidersHorizontal } from "lucide-react";
 import ScrollReveal from "./ScrollReveal";
 import { useSearch } from "@/contexts/SearchContext";
 import { DateCombobox } from "./ui/date-combobox";
+import { LocationCombobox } from "./ui/location-combobox";
 
 export const EventsSection = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
-  const { filters, updateFilter } = useSearch();
+  const { filters, updateFilter, resetFilters } = useSearch();
 
   const filteredEvents = useMemo(() => {
     return mockEvents.filter((event) => {
@@ -35,10 +36,51 @@ export const EventsSection = () => {
       // Location filter
       if (filters.location !== "All Locations") {
         if (filters.location === "Online") {
-          if (event.locationType !== "Online") return false;
+          if (event.locationType !== "Online" && event.locationType !== "Hybrid") return false;
         } else {
           if (event.city !== filters.location) return false;
         }
+      }
+
+      // Date range filter
+      if (filters.dateRange !== "Any Date") {
+        const eventDate = new Date(event.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        switch (filters.dateRange) {
+          case "Today":
+            const todayEnd = new Date(today);
+            todayEnd.setHours(23, 59, 59, 999);
+            if (eventDate < today || eventDate > todayEnd) return false;
+            break;
+          case "This Week":
+            const weekEnd = new Date(today);
+            weekEnd.setDate(today.getDate() + 7);
+            if (eventDate < today || eventDate > weekEnd) return false;
+            break;
+          case "This Month":
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            if (eventDate < today || eventDate > monthEnd) return false;
+            break;
+          case "This Year":
+            const yearEnd = new Date(today.getFullYear(), 11, 31);
+            if (eventDate < today || eventDate > yearEnd) return false;
+            break;
+        }
+      }
+
+      // Price filter
+      if (filters.price !== "All Prices") {
+        if (filters.price === "Free Only" && event.price !== "Free") return false;
+        if (filters.price === "Paid Only" && event.price !== "Paid") return false;
+      }
+
+      // Format filter
+      if (filters.format !== "All Formats") {
+        if (filters.format === "In-Person" && event.locationType !== "IRL") return false;
+        if (filters.format === "Online" && event.locationType !== "Online") return false;
+        if (filters.format === "Hybrid" && event.locationType !== "Hybrid") return false;
       }
 
       return true;
@@ -119,7 +161,7 @@ export const EventsSection = () => {
                 <label className="mb-2 block text-sm font-medium text-foreground">
                   Date Range
                 </label>
-                <div className="w-full rounded-xl border border-glass-border bg-glass/50 px-4 py-2">
+                <div className="flex items-center gap-3 rounded-xl border border-glass-border bg-glass/50 px-4 py-2.5">
                   <DateCombobox
                     value={filters.dateRange}
                     onChange={(value) => updateFilter("dateRange", value)}
@@ -130,19 +172,22 @@ export const EventsSection = () => {
                 <label className="mb-2 block text-sm font-medium text-foreground">
                   Location
                 </label>
-                <select className="w-full rounded-xl border border-glass-border bg-glass/50 px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
-                  <option>All Locations</option>
-                  <option>San Francisco</option>
-                  <option>New York</option>
-                  <option>London</option>
-                  <option>Online Only</option>
-                </select>
+                <div className="flex items-center gap-3 rounded-xl border border-glass-border bg-glass/50 px-4 py-2.5">
+                  <LocationCombobox
+                    value={filters.location}
+                    onChange={(value) => updateFilter("location", value)}
+                  />
+                </div>
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
                   Price
                 </label>
-                <select className="w-full rounded-xl border border-glass-border bg-glass/50 px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
+                <select 
+                  className="w-full rounded-xl border border-glass-border bg-glass/50 px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+                  value={filters.price}
+                  onChange={(e) => updateFilter("price", e.target.value)}
+                >
                   <option>All Prices</option>
                   <option>Free Only</option>
                   <option>Paid Only</option>
@@ -152,7 +197,11 @@ export const EventsSection = () => {
                 <label className="mb-2 block text-sm font-medium text-foreground">
                   Format
                 </label>
-                <select className="w-full rounded-xl border border-glass-border bg-glass/50 px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
+                <select 
+                  className="w-full rounded-xl border border-glass-border bg-glass/50 px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+                  value={filters.format}
+                  onChange={(e) => updateFilter("format", e.target.value)}
+                >
                   <option>All Formats</option>
                   <option>In-Person</option>
                   <option>Online</option>
@@ -161,10 +210,10 @@ export const EventsSection = () => {
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setShowFilters(false)}>
+              <Button variant="ghost" onClick={() => { resetFilters(); setShowFilters(false); }}>
                 Clear All
               </Button>
-              <Button variant="accent">Apply Filters</Button>
+              <Button variant="accent" onClick={() => setShowFilters(false)}>Apply Filters</Button>
             </div>
           </motion.div>
         )}
