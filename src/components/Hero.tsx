@@ -1,0 +1,177 @@
+import { motion } from "framer-motion";
+import { Search, MapPin, Calendar, ArrowRight } from "lucide-react";
+import { Button } from "./ui/button";
+import { LocationCombobox } from "./ui/location-combobox";
+import { DateCombobox } from "./ui/date-combobox";
+import LightRays from "./LightRays";
+import { useSearch } from "@/contexts/SearchContext";
+
+export const Hero = () => {
+  const { filters, updateFilter } = useSearch();
+
+  const scrollToEvents = () => {
+    document.getElementById("events-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  return (
+    <section className="relative min-h-screen overflow-hidden pt-32 pb-20">
+      {/* Light Rays Background */}
+      <div className="absolute inset-0">
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={0.5}
+          lightSpread={1.5}
+          rayLength={2}
+          pulsating={true}
+          fadeDistance={1.2}
+          saturation={0.3}
+          followMouse={true}
+          mouseInfluence={0.15}
+          noiseAmount={0.1}
+          distortion={0.05}
+        />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-glass-border bg-glass/40 px-4 py-2 backdrop-blur-sm"
+          >
+            <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+            <span className="text-sm text-muted-foreground">
+              Discover 500+ startup events worldwide
+            </span>
+          </motion.div>
+
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+          >
+            Where Founders
+            <br />
+            <span className="text-gradient">Find Their Next</span>
+            <br />
+            Big Opportunity
+          </motion.h1>
+
+          {/* Subheadline */}
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl"
+          >
+            The curated directory of accelerators, demo days, hackathons, and
+            startup meetups. Never miss an event that could change your
+            trajectory.
+          </motion.p>
+
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mx-auto mt-10 max-w-3xl"
+          >
+            <div className="glass-card p-2">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                {/* Search Input */}
+                <div className="flex flex-1 items-center gap-3 rounded-xl bg-background/50 px-4 py-3">
+                  <Search className="h-5 w-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search events, organizers, or topics..."
+                    value={filters.query}
+                    onChange={(e) => updateFilter("query", e.target.value)}
+                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  />
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center gap-3 rounded-xl bg-background/50 px-4 py-3 md:w-64">
+                  <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <LocationCombobox 
+                    value={filters.location}
+                    onChange={(value) => updateFilter("location", value)}
+                  />
+                </div>
+
+                {/* Date */}
+                <div className="flex items-center gap-3 rounded-xl bg-background/50 px-4 py-3 md:w-64">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <DateCombobox 
+                    value={filters.dateRange}
+                    onChange={(value) => updateFilter("dateRange", value)}
+                  />
+                </div>
+
+                {/* Search Button */}
+                <Button variant="hero" size="lg" className="gap-2" onClick={scrollToEvents}>
+                  Search
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Quick Tags */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-3"
+          >
+            <span className="text-sm text-muted-foreground">Popular:</span>
+            {["Demo Days", "Hackathons", "AI Events", "Web3", "Free Events"].map(
+              (tag) => (
+                <motion.button
+                  key={tag}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="rounded-full border border-glass-border bg-glass/30 px-4 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-glass/50 hover:text-foreground"
+                >
+                  {tag}
+                </motion.button>
+              )
+            )}
+          </motion.div>
+        </div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="mt-20 grid grid-cols-2 gap-4 sm:grid-cols-4"
+        >
+          {[
+            { value: "500+", label: "Events Listed" },
+            { value: "50+", label: "Cities" },
+            { value: "200+", label: "Organizers" },
+            { value: "25K+", label: "Founders" },
+          ].map((stat, i) => (
+            <div
+              key={stat.label}
+              className="glass-card p-6 text-center"
+            >
+              <div className="font-display text-3xl font-bold text-foreground">
+                {stat.value}
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
