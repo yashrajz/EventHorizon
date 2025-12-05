@@ -4,6 +4,7 @@ import { EventsSection } from "@/components/EventsSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { NewsletterSection } from "@/components/NewsletterSection";
 import { Footer } from "@/components/Footer";
+import SEO from "@/components/SEO";
 import ClickSpark from "@/components/ClickSpark";
 
 const Index = () => {
@@ -15,6 +16,7 @@ const Index = () => {
       sparkCount={10} 
       duration={500}
     >
+      <SEO />
       <div className="min-h-screen">
         <Header />
         <main>

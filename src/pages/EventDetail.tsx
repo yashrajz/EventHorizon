@@ -5,6 +5,8 @@ import { Calendar, MapPin, Clock, Users, ArrowLeft, ExternalLink, Share2 } from 
 import { mockEvents } from "@/data/events";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { Breadcrumb } from "@/components/Breadcrumb";
+import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -85,23 +87,31 @@ const EventDetail = () => {
 
   return (
     <ClickSpark sparkColor="#6b7280" sparkSize={12} sparkRadius={20} sparkCount={10} duration={500}>
+      <SEO 
+        title={event.title}
+        description={event.description}
+        image={event.coverImage}
+        url={`${window.location.origin}/event/${event.id}`}
+        type="article"
+        keywords={`${event.category}, ${event.city}, ${event.country}, startup event, ${event.locationType} event`}
+      />
       <div className="min-h-screen">
         <Header />
-        <main className="pt-24 pb-20">
+        <main className="pt-32 pb-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            {/* Back Button */}
+            {/* Breadcrumb */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Link
-                to="/"
-                className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Events
-              </Link>
+              <Breadcrumb
+                items={[
+                  { label: "Home", path: "/" },
+                  { label: "Events", path: "/#events" },
+                  { label: event.title }
+                ]}
+              />
             </motion.div>
 
             {/* Hero Section */}

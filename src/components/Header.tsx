@@ -2,9 +2,20 @@ import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Calendar, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+
+const navLinks = [
+  { name: "Events", path: "/" },
+  { name: "About", path: "/about" },
+  { name: "Submit Event", path: "/submit-event" },
+  { name: "Contact", path: "/contact" }
+];
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <motion.header
@@ -17,40 +28,50 @@ export const Header = () => {
         <div className="glass mt-4 rounded-2xl px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <motion.div
-              className="flex items-center gap-2"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-accent">
-                <Calendar className="h-5 w-5 text-accent-foreground" />
-              </div>
-              <span className="font-display text-xl font-bold text-foreground">
-                Event<span className="text-accent">Horizon</span>
-              </span>
-            </motion.div>
+            <Link to="/">
+              <motion.div
+                className="flex items-center gap-2 cursor-pointer"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-accent">
+                  <Calendar className="h-5 w-5 text-accent-foreground" />
+                </div>
+                <span className="font-display text-xl font-bold text-foreground">
+                  Event<span className="text-accent">Horizon</span>
+                </span>
+              </motion.div>
+            </Link>
 
             {/* Desktop Nav */}
             <nav className="hidden items-center gap-8 md:flex">
-              {["Events", "Categories", "Submit Event", "About"].map((item) => (
-                <motion.a
-                  key={item}
-                  href="#"
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  whileHover={{ y: -2 }}
-                >
-                  {item}
-                </motion.a>
+              {navLinks.map((link) => (
+                <Link key={link.path} to={link.path}>
+                  <motion.span
+                    className={`text-sm font-medium transition-colors ${
+                      isActive(link.path)
+                        ? "text-accent"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    whileHover={{ y: -2 }}
+                  >
+                    {link.name}
+                  </motion.span>
+                </Link>
               ))}
             </nav>
 
             {/* CTA */}
             <div className="hidden items-center gap-3 md:flex">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-              <Button variant="accent" size="sm">
-                Get Started
-              </Button>
+              <Link to="/signin">
+                <Button variant="ghost" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button variant="accent" size="sm">
+                  Get Started
+                </Button>
+              </Link>
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -74,22 +95,31 @@ export const Header = () => {
               exit={{ opacity: 0, height: 0 }}
               className="mt-4 flex flex-col gap-4 border-t border-glass-border pt-4 md:hidden"
             >
-              {["Events", "Categories", "Submit Event", "About"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="text-sm font-medium text-muted-foreground"
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-sm font-medium ${
+                    isActive(link.path)
+                      ? "text-accent"
+                      : "text-muted-foreground"
+                  }`}
                 >
-                  {item}
-                </a>
+                  {link.name}
+                </Link>
               ))}
               <div className="flex gap-3 pt-2">
-                <Button variant="ghost" size="sm" className="flex-1">
-                  Sign In
-                </Button>
-                <Button variant="accent" size="sm" className="flex-1">
-                  Get Started
-                </Button>
+                <Link to="/signin" className="flex-1">
+                  <Button variant="ghost" size="sm" className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/signup" className="flex-1">
+                  <Button variant="accent" size="sm" className="w-full">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           )}
