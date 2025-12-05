@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SearchProvider } from "@/contexts/SearchContext";
+import SplashCursor from "@/components/SplashCursor";
 import Index from "./pages/Index";
 import EventDetail from "./pages/EventDetail";
 import NotFound from "./pages/NotFound";
@@ -14,6 +15,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <SearchProvider>
+        <SplashCursor />
         <Toaster />
         <Sonner />
         <BrowserRouter>
