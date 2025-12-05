@@ -821,8 +821,8 @@ function SplashCursor({
     }
 
     function drawDisplay(target: any) {
-      let width = target == null ? gl.drawingBufferWidth : target.width;
-      let height = target == null ? gl.drawingBufferHeight : target.height;
+      let width = target != null ? target.width : gl.drawingBufferWidth;
+      let height = target != null ? target.height : gl.drawingBufferHeight;
       displayMaterial.bind();
       if (config.SHADING) gl.uniform2f((displayMaterial.uniforms as any).texelSize, 1.0 / width, 1.0 / height);
       gl.uniform1i((displayMaterial.uniforms as any).uTexture, dye.read.attach(0));
