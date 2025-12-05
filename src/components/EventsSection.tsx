@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
-import { mockEvents, categories } from "@/data/events";
+import { mockEvents, categories, matchesQuery, isInDateRange } from "@/data/events";
 import { EventCard } from "./EventCard";
 import { Button } from "./ui/button";
 import { SlidersHorizontal } from "lucide-react";
@@ -12,6 +12,7 @@ import { LocationCombobox } from "./ui/location-combobox";
 export const EventsSection = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(6);
   const { filters, updateFilter, resetFilters } = useSearch();
 
   const filteredEvents = useMemo(() => {
@@ -21,16 +22,9 @@ export const EventsSection = () => {
         return false;
       }
 
-      // Search query filter
-      if (filters.query) {
-        const query = filters.query.toLowerCase();
-        const matchesTitle = event.title.toLowerCase().includes(query);
-        const matchesDescription = event.description.toLowerCase().includes(query);
-        const matchesOrganizer = event.organizer.toLowerCase().includes(query);
-        const matchesTags = event.tags.some((tag) => tag.toLowerCase().includes(query));
-        if (!matchesTitle && !matchesDescription && !matchesOrganizer && !matchesTags) {
-          return false;
-        }
+      // Search query filter - using helper function
+      if (filters.query && !matchesQuery(event, filters.query)) {
+        return false;
       }
 
       // Location filter
@@ -42,32 +36,9 @@ export const EventsSection = () => {
         }
       }
 
-      // Date range filter
-      if (filters.dateRange !== "Any Date") {
-        const eventDate = new Date(event.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        switch (filters.dateRange) {
-          case "Today":
-            const todayEnd = new Date(today);
-            todayEnd.setHours(23, 59, 59, 999);
-            if (eventDate < today || eventDate > todayEnd) return false;
-            break;
-          case "This Week":
-            const weekEnd = new Date(today);
-            weekEnd.setDate(today.getDate() + 7);
-            if (eventDate < today || eventDate > weekEnd) return false;
-            break;
-          case "This Month":
-            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            if (eventDate < today || eventDate > monthEnd) return false;
-            break;
-          case "This Year":
-            const yearEnd = new Date(today.getFullYear(), 11, 31);
-            if (eventDate < today || eventDate > yearEnd) return false;
-            break;
-        }
+      // Date range filter - using helper function
+      if (!isInDateRange(event.date, filters.dateRange)) {
+        return false;
       }
 
       // Price filter
@@ -220,22 +191,28 @@ export const EventsSection = () => {
 
         {/* Events Grid */}
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredEvents.map((event, index) => (
+          {filteredEvents.slice(0, visibleCount).map((event, index) => (
             <EventCard key={event.id} event={event} index={index} />
           ))}
         </div>
 
         {/* Load More */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="mt-12 text-center"
-        >
-          <Button variant="glass" size="lg">
-            Load More Events
-          </Button>
-        </motion.div>
+        {visibleCount < filteredEvents.length && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mt-12 text-center"
+          >
+            <Button 
+              variant="glass" 
+              size="lg"
+              onClick={() => setVisibleCount(prev => prev + 6)}
+            >
+              Load More Events ({filteredEvents.length - visibleCount} remaining)
+            </Button>
+          </motion.div>
+        )}
       </div>
     </section>
   );

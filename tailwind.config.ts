@@ -56,6 +56,12 @@ export default {
           border: "hsl(var(--glass-border))",
         },
         glow: "hsl(var(--glow))",
+        // Custom palette from image
+        'dark-bg': '#1A1A1D',
+        'gray-medium': '#4E4E50',
+        'burgundy': '#6F2232',
+        'pink-dark': '#950740',
+        'pink-bright': '#C3073F',
       },
       borderRadius: {
         lg: "var(--radius)",

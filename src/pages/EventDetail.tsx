@@ -1,11 +1,18 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Clock, Users, ArrowLeft, ExternalLink, Share2 } from "lucide-react";
 import { mockEvents } from "@/data/events";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ClickSpark from "@/components/ClickSpark";
 
 const EventDetail = () => {
@@ -15,6 +22,45 @@ const EventDetail = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const handleShare = (platform?: string) => {
+    if (!event) return;
+    
+    const eventUrl = `${window.location.origin}/event/${event.id}`;
+    const shareText = `Check out ${event.title} - ${formatDate(event.date)}`;
+
+    if (platform === 'copy') {
+      navigator.clipboard.writeText(eventUrl);
+      toast({
+        title: "Link copied!",
+        description: "Event link has been copied to clipboard.",
+      });
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(eventUrl)}`, '_blank');
+    } else if (platform === 'linkedin') {
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(eventUrl)}`, '_blank');
+    } else if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + eventUrl)}`, '_blank');
+    } else if (platform === 'facebook') {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`, '_blank');
+    }
+  };
+
+  const handleRegister = () => {
+    if (event) {
+      window.open(event.registrationUrl, '_blank');
+    }
+  };
 
   if (!event) {
     return (
@@ -36,16 +82,6 @@ const EventDetail = () => {
       </ClickSpark>
     );
   }
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   return (
     <ClickSpark sparkColor="#6b7280" sparkSize={12} sparkRadius={20} sparkCount={10} duration={500}>
@@ -76,15 +112,16 @@ const EventDetail = () => {
               className="glass-card overflow-hidden"
             >
               {/* Cover Image */}
-              <div className="relative h-64 sm:h-80 bg-gradient-to-br from-primary/20 to-accent/20">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-8xl font-display font-bold text-foreground/10">
-                    {event.title.charAt(0)}
-                  </div>
-                </div>
+              <div className="relative h-64 sm:h-80 lg:h-96 bg-muted overflow-hidden">
+                <img 
+                  src={event.coverImage} 
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
 
                 {/* Tags */}
-                <div className="absolute top-6 left-6 flex flex-wrap gap-2">
+                <div className="absolute top-6 left-6 flex flex-wrap gap-2 z-10">
                   <span className="rounded-full bg-accent/90 px-4 py-1.5 text-sm font-medium text-accent-foreground backdrop-blur-sm">
                     {event.category}
                   </span>
@@ -95,7 +132,7 @@ const EventDetail = () => {
                         : "bg-amber-500/20 text-amber-300"
                     }`}
                   >
-                    {event.price}
+                    {event.price === "Paid" && event.priceAmount ? event.priceAmount : event.price}
                   </span>
                   <span
                     className={`rounded-full px-4 py-1.5 text-sm font-medium backdrop-blur-sm ${
@@ -203,14 +240,40 @@ const EventDetail = () => {
 
                 {/* Actions */}
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                  <Button variant="hero" size="lg" className="flex-1 gap-2">
+                  <Button 
+                    variant="hero" 
+                    size="lg" 
+                    className="flex-1 gap-2"
+                    onClick={handleRegister}
+                  >
                     Register Now
                     <ExternalLink className="h-4 w-4" />
                   </Button>
-                  <Button variant="glass" size="lg" className="gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Share
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="glass" size="lg" className="gap-2">
+                        <Share2 className="h-4 w-4" />
+                        Share
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleShare('copy')}>
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleShare('twitter')}>
+                        Share on Twitter
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleShare('linkedin')}>
+                        Share on LinkedIn
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleShare('whatsapp')}>
+                        Share on WhatsApp
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleShare('facebook')}>
+                        Share on Facebook
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </motion.div>
