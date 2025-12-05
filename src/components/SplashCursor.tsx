@@ -171,7 +171,7 @@ function SplashCursor({
         this.fragmentShaderSource = fragmentShaderSource;
         this.programs = [];
         this.activeProgram = null;
-        this.uniforms = {};
+        this.uniforms = [];
       }
 
       setKeywords(keywords: string[]) {
@@ -575,7 +575,7 @@ function SplashCursor({
     const curlProgram = new Program(baseVertexShader, curlShader);
     const vorticityProgram = new Program(baseVertexShader, vorticityShader);
     const pressureProgram = new Program(baseVertexShader, pressureShader);
-    const gradienSubtractProgram = new Program(baseVertexShader, gradientSubtractShader);
+    const gradientSubtractProgram = new Program(baseVertexShader, gradientSubtractShader);
     const displayMaterial = new Material(baseVertexShader, displayShaderSource);
 
     function initFramebuffers() {
@@ -786,10 +786,10 @@ function SplashCursor({
         pressure.swap();
       }
 
-      gradienSubtractProgram.bind();
-      gl.uniform2f(gradienSubtractProgram.uniforms.texelSize, velocity.texelSizeX, velocity.texelSizeY);
-      gl.uniform1i(gradienSubtractProgram.uniforms.uPressure, pressure.read.attach(0));
-      gl.uniform1i(gradienSubtractProgram.uniforms.uVelocity, velocity.read.attach(1));
+      gradientSubtractProgram.bind();
+      gl.uniform2f((gradientSubtractProgram.uniforms as any).texelSize, velocity.texelSizeX, velocity.texelSizeY);
+      gl.uniform1i((gradientSubtractProgram.uniforms as any).uPressure, pressure.read.attach(0));
+      gl.uniform1i((gradientSubtractProgram.uniforms as any).uVelocity, velocity.read.attach(1));
       blit(velocity.write);
       velocity.swap();
 
@@ -824,8 +824,8 @@ function SplashCursor({
       let width = target == null ? gl.drawingBufferWidth : target.width;
       let height = target == null ? gl.drawingBufferHeight : target.height;
       displayMaterial.bind();
-      if (config.SHADING) gl.uniform2f(displayMaterial.uniforms.texelSize, 1.0 / width, 1.0 / height);
-      gl.uniform1i(displayMaterial.uniforms.uTexture, dye.read.attach(0));
+      if (config.SHADING) gl.uniform2f((displayMaterial.uniforms as any).texelSize, 1.0 / width, 1.0 / height);
+      gl.uniform1i((displayMaterial.uniforms as any).uTexture, dye.read.attach(0));
       blit(target);
     }
 
