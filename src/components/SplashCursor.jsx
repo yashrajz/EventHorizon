@@ -147,7 +147,7 @@ function SplashCursor({
         this.fragmentShaderSource = fragmentShaderSource;
         this.programs = [];
         this.activeProgram = null;
-        this.uniforms = [];
+        this.uniforms = {};
       }
       setKeywords(keywords) {
         let hash = 0;
