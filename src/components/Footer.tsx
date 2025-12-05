@@ -1,12 +1,38 @@
 import { motion } from "framer-motion";
 import { Calendar, Twitter, Linkedin, Github } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const footerLinks = {
-  Product: ["Events", "Categories", "Submit Event", "Pricing"],
-  Company: ["About", "Blog", "Careers", "Contact"],
-  Resources: ["Help Center", "API", "Partners", "Community"],
-  Legal: ["Privacy", "Terms", "Cookies"],
+  Product: [
+    { name: "Events", path: "/" },
+    { name: "Categories", path: "/#categories" },
+    { name: "Submit Event", path: "#submit" },
+    { name: "Pricing", path: "#pricing" }
+  ],
+  Company: [
+    { name: "About", path: "/about" },
+    { name: "Blog", path: "#blog" },
+    { name: "Careers", path: "#careers" },
+    { name: "Contact", path: "/contact" }
+  ],
+  Resources: [
+    { name: "Help Center", path: "#help" },
+    { name: "API", path: "#api" },
+    { name: "Partners", path: "#partners" },
+    { name: "Community", path: "#community" }
+  ],
+  Legal: [
+    { name: "Privacy", path: "#privacy" },
+    { name: "Terms", path: "#terms" },
+    { name: "Cookies", path: "#cookies" }
+  ]
 };
+
+const socialLinks = [
+  { Icon: Twitter, url: "https://twitter.com/eventhorizon", label: "Twitter" },
+  { Icon: Linkedin, url: "https://linkedin.com/company/eventhorizon", label: "LinkedIn" },
+  { Icon: Github, url: "https://github.com/eventhorizon", label: "GitHub" }
+];
 
 export const Footer = () => {
   return (
@@ -15,26 +41,31 @@ export const Footer = () => {
         <div className="grid gap-12 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <motion.div
-              className="flex items-center gap-2"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-accent">
-                <Calendar className="h-5 w-5 text-accent-foreground" />
-              </div>
-              <span className="font-display text-xl font-bold text-foreground">
-                Event<span className="text-accent">Horizon</span>
-              </span>
-            </motion.div>
+            <Link to="/">
+              <motion.div
+                className="flex items-center gap-2 cursor-pointer"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-accent">
+                  <Calendar className="h-5 w-5 text-accent-foreground" />
+                </div>
+                <span className="font-display text-xl font-bold text-foreground">
+                  Event<span className="text-accent">Horizon</span>
+                </span>
+              </motion.div>
+            </Link>
             <p className="mt-4 max-w-sm text-sm text-muted-foreground">
               The curated directory for startup events. Connecting founders,
               investors, and builders with opportunities worldwide.
             </p>
             <div className="mt-6 flex gap-4">
-              {[Twitter, Linkedin, Github].map((Icon, i) => (
+              {socialLinks.map(({ Icon, url, label }) => (
                 <motion.a
-                  key={i}
-                  href="#"
+                  key={label}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
                   whileHover={{ scale: 1.1, y: -2 }}
                   className="flex h-10 w-10 items-center justify-center rounded-xl border border-glass-border bg-glass/30 text-muted-foreground transition-colors hover:bg-glass/50 hover:text-foreground"
                 >
@@ -51,16 +82,28 @@ export const Footer = () => {
                 {category}
               </h4>
               <ul className="mt-4 space-y-3">
-                {links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
+                {links.map((link) => {
+                  const isExternal = link.path.startsWith("#");
+                  return (
+                    <li key={link.name}>
+                      {isExternal ? (
+                        <a
+                          href={link.path}
+                          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {link.name}
+                        </a>
+                      ) : (
+                        <Link
+                          to={link.path}
+                          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {link.name}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
@@ -69,7 +112,7 @@ export const Footer = () => {
         {/* Bottom */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-glass-border pt-8 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © 2024 EventHorizon. All rights reserved.
+            © {new Date().getFullYear()} EventHorizon. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
             Made with care for the startup community
