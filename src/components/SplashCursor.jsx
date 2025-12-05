@@ -543,7 +543,7 @@ function SplashCursor({
     const curlProgram = new Program(baseVertexShader, curlShader);
     const vorticityProgram = new Program(baseVertexShader, vorticityShader);
     const pressureProgram = new Program(baseVertexShader, pressureShader);
-    const gradienSubtractProgram = new Program(baseVertexShader, gradientSubtractShader);
+    const gradientSubtractProgram = new Program(baseVertexShader, gradientSubtractShader);
     const displayMaterial = new Material(baseVertexShader, displayShaderSource);
 
     function initFramebuffers() {
