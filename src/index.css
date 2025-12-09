@@ -62,6 +62,22 @@
     --background: 0 0% 10%;
     --foreground: 0 0% 95%;
   }
+
+  * {
+    cursor: none !important;
+  }
+
+  a, button, [role="button"] {
+    cursor: none !important;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
 }
 
 @layer base {
