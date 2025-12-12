@@ -97,12 +97,23 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        ripple: {
+          "0%": { 
+            transform: "scale(0.8)",
+            opacity: "1",
+          },
+          "100%": { 
+            transform: "scale(2.4)",
+            opacity: "0",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         shimmer: "shimmer 2s infinite linear",
         float: "float 6s ease-in-out infinite",
+        ripple: "ripple 3.5s ease-out infinite",
       },
     },
   },

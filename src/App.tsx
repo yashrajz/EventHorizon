@@ -7,7 +7,6 @@ import { HelmetProvider } from "react-helmet-async";
 import { SearchProvider } from "@/contexts/SearchContext";
 import { initAnalytics } from "@/lib/analytics";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { SmoothCursor } from "@/components/SmoothCursor";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -33,7 +32,6 @@ const App = () => {
           <SearchProvider>
             <Toaster />
             <Sonner />
-            <SmoothCursor />
             <SmoothScroll />
             <BrowserRouter>
               <Routes>

@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { EventsSection } from "@/components/EventsSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
+import { BentoGrid } from "@/components/BentoGrid";
 import { NewsletterSection } from "@/components/NewsletterSection";
 import { Footer } from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -21,6 +22,7 @@ const Index = () => {
         <Header />
         <main>
           <Hero />
+          <BentoGrid />
           <EventsSection />
           <FeaturesSection />
           <NewsletterSection />

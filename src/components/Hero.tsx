@@ -4,6 +4,9 @@ import { Button } from "./ui/button";
 import { LocationCombobox } from "./ui/location-combobox";
 import { DateCombobox } from "./ui/date-combobox";
 import LightRays from "./LightRays";
+import { Ripple } from "./ui/ripple";
+import { AnimatedText } from "./AnimatedText";
+import { InfiniteScroll } from "./InfiniteScroll";
 import { useSearch } from "@/contexts/SearchContext";
 
 export const Hero = () => {
@@ -33,6 +36,11 @@ export const Hero = () => {
         />
       </div>
 
+      {/* Ripple Effect */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Ripple mainCircleSize={250} mainCircleOpacity={0.6} numCircles={8} />
+      </div>
+
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           {/* Badge */}
@@ -49,18 +57,11 @@ export const Hero = () => {
           </motion.div>
 
           {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+          <AnimatedText
+            text="Where Founders Find Their Next Big Opportunity"
             className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
-          >
-            Where Founders
-            <br />
-            <span className="text-gradient">Find Their Next</span>
-            <br />
-            Big Opportunity
-          </motion.h1>
+            delay={0.1}
+          />
 
           {/* Subheadline */}
           <motion.p
@@ -122,30 +123,18 @@ export const Hero = () => {
             </div>
           </motion.div>
 
-          {/* Quick Tags */}
+          {/* Quick Tags - Replaced with Infinite Scroll */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-3"
+            className="mt-8"
           >
-            <span className="text-sm text-muted-foreground">Popular:</span>
-            {["Demo Day", "Hackathon", "AI Events", "Web3", "Free Events"].map(
-              (tag) => (
-                <motion.button
-                  key={tag}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    updateFilter("query", tag);
-                    scrollToEvents();
-                  }}
-                  className="rounded-full border border-glass-border bg-glass/30 px-4 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-glass/50 hover:text-foreground"
-                >
-                  {tag}
-                </motion.button>
-              )
-            )}
+            <InfiniteScroll
+              items={["Demo Day", "Hackathon", "AI Events", "Web3 Summit", "Free Events", "Accelerators", "Pitch Competition", "Networking", "Startup Meetups", "Product Launch"]}
+              direction="left"
+              speed={30}
+            />
           </motion.div>
         </div>
 

@@ -63,18 +63,23 @@ export const EventCard = ({ event, index }: EventCardProps) => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: index * 0.1 }}
-        whileHover={{ y: -8 }}
-        className="group glass-card overflow-hidden cursor-pointer"
+        whileHover={{ y: -12, scale: 1.02 }}
+        className="group relative glass-card overflow-hidden cursor-pointer transition-all duration-300"
       >
+        {/* Hover gradient overlay */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-primary/10" />
+        </div>
+
       {/* Image Header */}
       <div className="relative h-48 overflow-hidden bg-muted">
         <img 
           src={event.coverImage} 
           alt={event.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-125 group-hover:rotate-2"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
         
         {/* Tags */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-2 z-10">
@@ -109,12 +114,12 @@ export const EventCard = ({ event, index }: EventCardProps) => {
       </div>
 
       {/* Content */}
-      <div className="p-6">
-        <h3 className="font-display text-xl font-semibold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+      <div className="relative p-6">
+        <h3 className="font-display text-xl font-semibold text-foreground line-clamp-2 group-hover:text-accent transition-colors duration-300">
           {event.title}
         </h3>
         
-        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+        <p className="mt-2 text-sm text-muted-foreground line-clamp-2 group-hover:text-foreground/80 transition-colors duration-300">
           {event.description}
         </p>
 

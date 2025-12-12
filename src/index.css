@@ -46,12 +46,12 @@
     --glass: 0 0% 12%;
     --glass-border: 0 0% 20%;
     --glow: 340 82% 52%; /* #C3073F pink glow */
-    
+
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, #1A1A1D 0%, #0d0d0e 50%, #1A1A1D 100%);
     --gradient-card: linear-gradient(145deg, rgba(78, 78, 80, 0.2) 0%, rgba(26, 26, 29, 0.8) 100%);
     --gradient-accent: linear-gradient(135deg, #C3073F 0%, #950740 50%, #6F2232 100%);
-    
+
     /* Shadows */
     --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.6);
     --shadow-glow: 0 0 40px rgba(195, 7, 63, 0.3);
@@ -63,13 +63,7 @@
     --foreground: 0 0% 95%;
   }
 
-  * {
-    cursor: none !important;
-  }
 
-  a, button, [role="button"] {
-    cursor: none !important;
-  }
 
   html {
     scroll-behavior: smooth;
@@ -77,6 +71,9 @@
 
   body {
     overflow-x: hidden;
+  }
+  .theme {
+    --animate-ripple: ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite;
   }
 }
 
@@ -165,4 +162,26 @@
   .stagger-2 { animation-delay: 0.2s; }
   .stagger-3 { animation-delay: 0.3s; }
   .stagger-4 { animation-delay: 0.4s; }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@theme inline {
+  @keyframes ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
 }
