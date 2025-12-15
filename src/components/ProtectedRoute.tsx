@@ -1,21 +1,24 @@
 import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-// This is a placeholder for authentication check
-// Replace with your actual authentication logic
-const isAuthenticated = () => {
-  // TODO: Check if user is authenticated (e.g., check token in localStorage)
-  // return !!localStorage.getItem('authToken');
-  return false; // For now, always require sign in
-};
-
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
+  const { user, loading } = useAuth();
 
-  if (!isAuthenticated()) {
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-bg">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-bright"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
     // Redirect to sign in page, but save the location they were trying to access
     return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
   }

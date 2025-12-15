@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
-import { Calendar, Menu, X } from "lucide-react";
+import { Calendar, Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const navLinks = [
   { name: "Events", path: "/" },
@@ -14,8 +16,18 @@ const navLinks = [
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Failed to sign out");
+    } else {
+      toast.success("Signed out successfully");
+    }
+  };
 
   return (
     <motion.header
@@ -62,16 +74,35 @@ export const Header = () => {
 
             {/* CTA */}
             <div className="hidden items-center gap-3 md:flex">
-              <Link to="/signin">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button variant="accent" size="sm">
-                  Get Started
-                </Button>
-              </Link>
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <Link to="/dashboard" className="flex items-center gap-2 hover:bg-white/10 rounded-lg px-3 py-2 transition-colors">
+                    <div className="h-8 w-8 rounded-full bg-gradient-accent flex items-center justify-center">
+                      <User className="h-4 w-4 text-accent-foreground" />
+                    </div>
+                    <span className="text-sm font-medium text-foreground">
+                      {user.email}
+                    </span>
+                  </Link>
+                  <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Link to="/signin">
+                    <Button variant="ghost" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button variant="accent" size="sm">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -110,16 +141,35 @@ export const Header = () => {
                 </Link>
               ))}
               <div className="flex gap-3 pt-2">
-                <Link to="/signin" className="flex-1">
-                  <Button variant="ghost" size="sm" className="w-full">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/signup" className="flex-1">
-                  <Button variant="accent" size="sm" className="w-full">
-                    Get Started
-                  </Button>
-                </Link>
+                {user ? (
+                  <div className="w-full">
+                    <Link to="/dashboard" className="flex items-center gap-2 mb-3 hover:bg-white/10 rounded-lg px-2 py-2 transition-colors">
+                      <div className="h-8 w-8 rounded-full bg-gradient-accent flex items-center justify-center">
+                        <User className="h-4 w-4 text-accent-foreground" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">
+                        {user.email}
+                      </span>
+                    </Link>
+                    <Button variant="ghost" size="sm" className="w-full" onClick={handleSignOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Link to="/signin" className="flex-1">
+                      <Button variant="ghost" size="sm" className="w-full">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/signup" className="flex-1">
+                      <Button variant="accent" size="sm" className="w-full">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           )}

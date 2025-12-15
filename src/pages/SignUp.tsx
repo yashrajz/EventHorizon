@@ -11,10 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -48,18 +50,25 @@ const SignUp = () => {
 
     setIsLoading(true);
 
-    // Simulate API call (replace with actual registration)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const { user, error } = await signUp(formData.email, formData.password, formData.name);
+      
+      if (error) {
+        toast.error(error.message || "Failed to create account. Please try again.");
+        setIsLoading(false);
+        return;
+      }
 
-    // TODO: Replace with actual registration logic
-    // Example: const response = await authService.signUp(formData);
-    
-    toast.success("Account created successfully! Welcome to EventHorizon.");
-    
-    // Redirect to the page they were trying to access or home
-    navigate(from, { replace: true });
-    
-    setIsLoading(false);
+      if (user) {
+        toast.success("Account created successfully! Please check your email to confirm your account.");
+        // Don't auto-redirect after signup, let them confirm email first
+        navigate("/signin", { replace: true });
+      }
+    } catch (err) {
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
