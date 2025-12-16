@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -228,6 +230,8 @@ const SignIn = () => {
         </main>
 
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

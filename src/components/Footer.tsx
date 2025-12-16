@@ -5,33 +5,33 @@ import { Link } from "react-router-dom";
 const footerLinks = {
   Product: [
     { name: "Events", path: "/" },
-    { name: "Categories", path: "/#categories" },
-    { name: "Submit Event", path: "#submit" },
-    { name: "Pricing", path: "#pricing" }
+    { name: "Categories", path: "/" },
+    { name: "Submit Event", path: "/submit-event" },
+    { name: "Pricing", path: "/" }
   ],
   Company: [
     { name: "About", path: "/about" },
-    { name: "Blog", path: "#blog" },
-    { name: "Careers", path: "#careers" },
+    { name: "Blog", path: "/blog" },
+    { name: "Careers", path: "/careers" },
     { name: "Contact", path: "/contact" }
   ],
   Resources: [
-    { name: "Help Center", path: "#help" },
-    { name: "API", path: "#api" },
-    { name: "Partners", path: "#partners" },
-    { name: "Community", path: "#community" }
+    { name: "Help Center", path: "/help" },
+    { name: "API", path: "/" },
+    { name: "Partners", path: "/partners" },
+    { name: "Community", path: "/community" }
   ],
   Legal: [
-    { name: "Privacy", path: "#privacy" },
-    { name: "Terms", path: "#terms" },
-    { name: "Cookies", path: "#cookies" }
+    { name: "Privacy", path: "/privacy" },
+    { name: "Terms", path: "/terms" },
+    { name: "Cookies", path: "/cookies" }
   ]
 };
 
 const socialLinks = [
   { Icon: Twitter, url: "https://twitter.com/eventhorizon", label: "Twitter" },
   { Icon: Linkedin, url: "https://linkedin.com/company/eventhorizon", label: "LinkedIn" },
-  { Icon: Github, url: "https://github.com/eventhorizon", label: "GitHub" }
+  { Icon: Github, url: "https://github.com/yashrajz/EventHorizon#", label: "GitHub" }
 ];
 
 export const Footer = () => {
@@ -82,28 +82,19 @@ export const Footer = () => {
                 {category}
               </h4>
               <ul className="mt-4 space-y-3">
-                {links.map((link) => {
-                  const isExternal = link.path.startsWith("#");
-                  return (
-                    <li key={link.name}>
-                      {isExternal ? (
-                        <a
-                          href={link.path}
-                          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {link.name}
-                        </a>
-                      ) : (
-                        <Link
-                          to={link.path}
-                          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {link.name}
-                        </Link>
-                      )}
-                    </li>
-                  );
-                })}
+                {links.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      to={link.path}
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           ))}

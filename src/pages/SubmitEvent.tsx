@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
+import { useAdminData } from "@/contexts/AdminDataContext";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 // Select component for dropdowns
 import {
   Select,
@@ -22,6 +25,7 @@ import {
 
 const SubmitEvent = () => {
   const navigate = useNavigate();
+  const { createEvent } = useAdminData();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -48,14 +52,57 @@ const SubmitEvent = () => {
     setIsSubmitting(true);
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // TODO: Replace with actual API call to submit event
-    // Example: const response = await eventService.createEvent(formData);
+    // Create event with draft status for admin review
+    // Don't include id, createdAt, updatedAt - createEvent generates these
+    const eventData = {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      date: formData.date,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      timezone: formData.timezone,
+      locationType: formData.locationType as "online" | "offline" | "hybrid",
+      venue: formData.venue || undefined,
+      city: formData.city || undefined,
+      country: formData.country || undefined,
+      bannerImage: formData.coverImageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
+      status: "draft" as const, // Submitted events start as draft for admin review
+      organizer: formData.organizer,
+      tags: formData.category ? [formData.category] : [],
+      ticketTypes: formData.price === "free" ? [
+        {
+          id: "free-1",
+          name: "Free Entry",
+          price: 0,
+          type: "free" as const,
+          available: parseInt(formData.estimatedAttendees) || 100,
+          total: parseInt(formData.estimatedAttendees) || 100,
+        }
+      ] : [
+        {
+          id: "paid-1",
+          name: "General Admission",
+          price: parseFloat(formData.priceAmount) || 0,
+          type: "paid" as const,
+          available: parseInt(formData.estimatedAttendees) || 100,
+          total: parseInt(formData.estimatedAttendees) || 100,
+        }
+      ],
+      views: 0,
+      registrationUrl: formData.registrationUrl || undefined,
+    };
+
+    // Save to admin data context (id, createdAt, updatedAt, registrations auto-generated)
+    createEvent(eventData);
     
-    toast.success("Event submitted successfully! We'll review it shortly.");
+    toast.success("Event submitted successfully! Admins will review it shortly.", {
+      description: "You'll be notified once your event is published."
+    });
+    
     navigate("/");
-    
     setIsSubmitting(false);
   };
 
@@ -428,6 +475,8 @@ const SubmitEvent = () => {
         </main>
 
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

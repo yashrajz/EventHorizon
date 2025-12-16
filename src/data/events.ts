@@ -482,6 +482,52 @@ const isSameMonth = (d1: Date, d2: Date): boolean => {
   return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
 };
 
-const isSameYear = (d1: Date, d2: Date): boolean => {
+export const isSameYear = (d1: Date, d2: Date): boolean => {
   return d1.getFullYear() === d2.getFullYear();
+};
+
+// Admin integration
+import { AdminRepo } from "@/data/admin";
+
+function mapAdminToPublic(e: ReturnType<typeof AdminRepo.getEvents>[number]): Event {
+  const hasPaid = e.ticketTypes.some((t) => t.type === "Paid" || (t.type === "VIP" && (t.price ?? 0) > 0));
+  const minPrice = e.ticketTypes
+    .filter((t) => (t.price ?? 0) > 0)
+    .map((t) => t.price as number)
+    .sort((a, b) => a - b)[0];
+  return {
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    date: e.date,
+    startTime: e.startTime,
+    endTime: e.endTime,
+    timezone: e.timezone,
+    locationType: e.locationType === "Offline" ? "IRL" : "Online",
+    venue: e.venue,
+    city: e.city,
+    country: e.country,
+    tags: [e.category],
+    organizer: "Admin",
+    eventUrl: "",
+    registrationUrl: "",
+    coverImage:
+      e.bannerUrl && e.bannerUrl.length > 0
+        ? e.bannerUrl
+        : "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
+    views: e.views || 0,
+    price: hasPaid ? "Paid" : "Free",
+    priceAmount: hasPaid && minPrice ? `₹${minPrice}` : undefined,
+    category: e.category,
+  };
+}
+
+export const getAllEvents = (): Event[] => {
+  const adminPublished = AdminRepo.getEvents().filter((e) => e.status === "Published");
+  const mapped = adminPublished.map(mapAdminToPublic);
+  return [...mapped, ...mockEvents];
+};
+
+export const findEventById = (id: string): Event | undefined => {
+  return getAllEvents().find((e) => e.id === id);
 };

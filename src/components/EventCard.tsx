@@ -53,6 +53,7 @@ export const EventCard = ({ event, index }: EventCardProps) => {
   const handleRegister = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!event.registrationUrl) return;
     window.open(event.registrationUrl, '_blank');
   };
 
