@@ -31,7 +31,7 @@ const footerLinks = {
 const socialLinks = [
   { Icon: Twitter, url: "https://twitter.com/eventhorizon", label: "Twitter" },
   { Icon: Linkedin, url: "https://linkedin.com/company/eventhorizon", label: "LinkedIn" },
-  { Icon: Github, url: "https://github.com/yashrajz/EventHorizon#", label: "GitHub" }
+  { Icon: Github, url: "https://github.com/yashrajz/EventHorizon", label: "GitHub" }
 ];
 
 export const Footer = () => {

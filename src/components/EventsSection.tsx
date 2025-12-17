@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
-import { categories, matchesQuery, isInDateRange, type Event } from "@/data/events";
+import { categories, matchesQuery, isInDateRange, mockEvents, type Event } from "@/data/events";
 import { EventCard } from "./EventCard";
 import { Button } from "./ui/button";
 import { SlidersHorizontal } from "lucide-react";
@@ -8,62 +8,15 @@ import ScrollReveal from "./ScrollReveal";
 import { useSearch } from "@/contexts/SearchContext";
 import { DateCombobox } from "./ui/date-combobox";
 import { LocationCombobox } from "./ui/location-combobox";
-import { useAdminData } from "@/contexts/AdminDataContext";
-import type { AdminEvent } from "@/types/admin";
-
-// Convert AdminEvent to Event format for display
-const mapAdminEventToEvent = (adminEvent: AdminEvent): Event => {
-  const hasFreeTicket = adminEvent.ticketTypes.some(t => t.type === "free");
-  const paidTicket = adminEvent.ticketTypes.find(t => t.type === "paid" || t.type === "vip");
-  
-  // Map location type
-  let locationType: "IRL" | "Online" | "Hybrid";
-  if (adminEvent.locationType === "offline") {
-    locationType = "IRL";
-  } else if (adminEvent.locationType === "online") {
-    locationType = "Online";
-  } else {
-    locationType = "Hybrid";
-  }
-  
-  return {
-    id: adminEvent.id,
-    title: adminEvent.title,
-    description: adminEvent.description,
-    date: adminEvent.date,
-    startTime: adminEvent.startTime,
-    endTime: adminEvent.endTime,
-    timezone: adminEvent.timezone,
-    locationType,
-    venue: adminEvent.venue,
-    city: adminEvent.city,
-    country: adminEvent.country,
-    tags: adminEvent.tags,
-    organizer: adminEvent.organizer,
-    eventUrl: adminEvent.registrationUrl || "#",
-    registrationUrl: adminEvent.registrationUrl || "#",
-    coverImage: adminEvent.bannerImage,
-    views: adminEvent.views || 0,
-    price: hasFreeTicket ? "Free" : "Paid",
-    priceAmount: paidTicket ? `₹${paidTicket.price}` : undefined,
-    category: adminEvent.category,
-  };
-};
 
 export const EventsSection = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
   const { filters, updateFilter, resetFilters } = useSearch();
-  const { events: adminEvents } = useAdminData();
 
   const filteredEvents = useMemo(() => {
-    // Only show published events on the homepage
-    const publishedEvents = adminEvents
-      .filter(event => event.status === "published")
-      .map(mapAdminEventToEvent);
-    
-    return publishedEvents.filter((event) => {
+    return mockEvents.filter((event) => {
       // Category filter
       if (activeCategory !== "All" && event.category !== activeCategory) {
         return false;
@@ -103,7 +56,7 @@ export const EventsSection = () => {
 
       return true;
     });
-  }, [activeCategory, filters, adminEvents]);
+  }, [activeCategory, filters]);
 
   return (
     <section id="events-section" className="py-20">
