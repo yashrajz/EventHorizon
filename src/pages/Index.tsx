@@ -7,6 +7,8 @@ import { NewsletterSection } from "@/components/NewsletterSection";
 import { Footer } from "@/components/Footer";
 import SEO from "@/components/SEO";
 import ClickSpark from "@/components/ClickSpark";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 
 const Index = () => {
   return (
@@ -28,6 +30,8 @@ const Index = () => {
           <NewsletterSection />
         </main>
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );
