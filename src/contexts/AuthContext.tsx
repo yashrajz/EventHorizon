@@ -1,8 +1,15 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 /**
  * Unified Authentication Context
- * Handles all user types: admin, conference attendant, and normal users
+ * Handles all user types: admin, superadmin, attendant, and normal users
  */
 
 export type UserRole = "admin" | "superadmin" | "attendant" | "user";
@@ -31,10 +38,9 @@ const STORAGE_KEY = "eventhorizon:auth:user";
 
 /**
  * Mock user database
- * In production, replace with actual API calls
+ * Replace with real API later
  */
 const MOCK_USERS: Record<string, { password: string; user: User }> = {
-  // Admin users
   "admin@eventhorizon.com": {
     password: "admin123",
     user: {
@@ -53,7 +59,6 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       role: "superadmin",
     },
   },
-  // Conference Attendant
   "attendant@eventhorizon.com": {
     password: "attendant123",
     user: {
@@ -63,7 +68,6 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       role: "attendant",
     },
   },
-  // Normal users
   "user@example.com": {
     password: "user123",
     user: {
@@ -79,15 +83,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore user session from localStorage on mount
+  // Restore session from localStorage
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        const parsed = JSON.parse(raw) as User;
-        setUser(parsed);
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
+        setUser(JSON.parse(raw));
+      } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
@@ -95,22 +97,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Sign in with email and password
-   * Returns true if authentication successful
+   * Sign in using mock credentials
    */
-  const signIn = useCallback(async (email: string, password: string): Promise<boolean> => {
-    // Simulate API delay
+  const signIn = useCallback(async (email: string, password: string) => {
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const mockUser = MOCK_USERS[email];
-    
-    if (!mockUser || mockUser.password !== password) {
+    const record = MOCK_USERS[email];
+    if (!record || record.password !== password) {
       return false;
     }
 
-    // Successful authentication
-    setUser(mockUser.user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser.user));
+    setUser(record.user);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(record.user));
     return true;
   }, []);
 
@@ -123,10 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Check if user has one of the specified roles
+   * Check if user has one of the required roles
    */
   const hasRole = useCallback(
-    (roles: UserRole[]): boolean => {
+    (roles: UserRole[]) => {
       if (!user) return false;
       return roles.includes(user.role);
     },
@@ -134,10 +132,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   /**
-   * Get redirect path based on user role
-   * Used after login to send users to their appropriate dashboard
+   * Get redirect path based on role
    */
-  const getRedirectPath = useCallback((): string => {
+  const getRedirectPath = useCallback(() => {
     if (!user) return "/";
 
     switch (user.role) {
@@ -146,7 +143,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return "/admin";
       case "attendant":
         return "/attendant";
-      case "user":
       default:
         return "/";
     }
@@ -170,12 +166,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Hook to access auth context
- * @throws Error if used outside AuthProvider
  */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

@@ -1,13 +1,21 @@
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HelmetProvider } from "react-helmet-async";
-import { SearchProvider } from "@/contexts/SearchContext";
-import { initAnalytics } from "@/lib/analytics";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { SmoothCursor } from "@/components/ui/smooth-cursor";
+
+import { SearchProvider } from "@/contexts/SearchContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { initAnalytics } from "@/lib/analytics";
+
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
+
+// Pages
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -17,6 +25,10 @@ import Login from "./pages/Login";
 import SubmitEvent from "./pages/SubmitEvent";
 import EventDetail from "./pages/EventDetail";
 import NotFound from "./pages/NotFound";
+import AuthCallback from "./pages/AuthCallback";
+import Dashboard from "./pages/Dashboard";
+
+// Legal / Info
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
@@ -26,9 +38,8 @@ import Legal from "./pages/Legal";
 import Blog from "./pages/Blog";
 import Partners from "./pages/Partners";
 import Community from "./pages/Community";
-import { useEffect } from "react";
-import { AuthProvider } from "@/contexts/AuthContext";
-import RoleProtectedRoute from "@/components/RoleProtectedRoute";
+
+// Attendant
 import AttendantLayout from "@/pages/attendant/AttendantLayout";
 import AttendantDashboard from "@/pages/attendant/AttendantDashboard";
 
@@ -43,62 +54,76 @@ const App = () => {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <SearchProvider>
-            <Toaster />
-            <Sonner />
-            <SmoothScroll />
-            <BrowserRouter>
-              <SmoothCursor />
-              <AuthProvider>
+          <AuthProvider>
+            <SearchProvider>
+              <Toaster />
+              <Sonner />
+              <SmoothScroll />
+              <BrowserRouter>
+                <SmoothCursor />
+
                 <Routes>
-                    {/* Public Routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/event/:id" element={<EventDetail />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/cookies" element={<Cookies />} />
-                    <Route path="/legal" element={<Legal />} />
-                    <Route path="/careers" element={<Careers />} />
-                    <Route path="/help" element={<HelpCenter />} />
-                    <Route path="/partners" element={<Partners />} />
-                    <Route path="/community" element={<Community />} />
-                    
-                    {/* Auth Routes */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signin" element={<SignIn />} />
-                    <Route path="/signup" element={<SignUp />} />
-                    
-                    {/* User Protected Routes */}
-                    <Route 
-                      path="/submit-event" 
-                      element={
-                        <RoleProtectedRoute allowedRoles={["user", "attendant"]}>
-                          <SubmitEvent />
-                        </RoleProtectedRoute>
-                      } 
-                    />
-                    
-                    {/* Conference Attendant Routes */}
-                    <Route
-                      path="/attendant"
-                      element={
-                        <RoleProtectedRoute allowedRoles={["attendant"]}>
-                          <AttendantLayout />
-                        </RoleProtectedRoute>
-                      }
-                    >
-                      <Route index element={<AttendantDashboard />} />
-                    </Route>
-                    
-                    {/* 404 - Must be last */}
-                    <Route path="*" element={<NotFound />} />
-                    </Routes>
-              </AuthProvider>
-            </BrowserRouter>
-          </SearchProvider>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/event/:id" element={<EventDetail />} />
+                  <Route path="/blog" element={<Blog />} />
+
+                  {/* Legal */}
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/cookies" element={<Cookies />} />
+                  <Route path="/legal" element={<Legal />} />
+                  <Route path="/careers" element={<Careers />} />
+                  <Route path="/help" element={<HelpCenter />} />
+                  <Route path="/partners" element={<Partners />} />
+                  <Route path="/community" element={<Community />} />
+
+                  {/* Auth */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signin" element={<SignIn />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+
+                  {/* User Dashboard */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["user", "attendant"]}>
+                        <Dashboard />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
+                  {/* Submit Event */}
+                  <Route
+                    path="/submit-event"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["user", "attendant"]}>
+                        <SubmitEvent />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
+                  {/* Attendant Routes */}
+                  <Route
+                    path="/attendant"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["attendant"]}>
+                        <AttendantLayout />
+                      </RoleProtectedRoute>
+                    }
+                  >
+                    <Route index element={<AttendantDashboard />} />
+                  </Route>
+
+                  {/* 404 */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </SearchProvider>
+          </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>
