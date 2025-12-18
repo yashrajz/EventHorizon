@@ -41,7 +41,7 @@ interface PendingEvent {
 }
 
 const Admin = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [events, setEvents] = useState<PendingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
@@ -127,7 +127,7 @@ const Admin = () => {
     }
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <>
         <Header />
