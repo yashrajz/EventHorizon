@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, MapPin, Calendar, ArrowRight, Plus, Users, Settings } from "lucide-react";
+import { Search, MapPin, Calendar, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { LocationCombobox } from "./ui/location-combobox";
@@ -20,33 +20,7 @@ export const Hero = () => {
     document.getElementById("events-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  /**
-   * Handle CTA clicks - check authentication before navigation
-   * If not authenticated, redirect to login with return path
-   */
-  const handleCreateEvent = () => {
-    if (isAuthenticated) {
-      navigate("/submit-event");
-    } else {
-      navigate("/login", { state: { from: "/submit-event" } });
-    }
-  };
 
-  const handleManageConference = () => {
-    if (isAuthenticated && hasRole(["attendant"])) {
-      navigate("/attendant");
-    } else {
-      navigate("/login", { state: { from: "/attendant" } });
-    }
-  };
-
-  const handleAdminDashboard = () => {
-    if (isAuthenticated && hasRole(["admin", "superadmin"])) {
-      navigate("/admin");
-    } else {
-      navigate("/login", { state: { from: "/admin" } });
-    }
-  };
 
   return (
     <section className="relative min-h-screen overflow-hidden pt-32 pb-20">
@@ -107,41 +81,7 @@ export const Hero = () => {
             trajectory.
           </motion.p>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-4"
-          >
-            <Button 
-              size="lg" 
-              variant="default"
-              className="gap-2"
-              onClick={handleCreateEvent}
-            >
-              <Plus className="h-5 w-5" />
-              Create Event
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="gap-2"
-              onClick={handleManageConference}
-            >
-              <Users className="h-5 w-5" />
-              Manage Conference
-            </Button>
-            <Button 
-              size="lg" 
-              variant="ghost"
-              className="gap-2"
-              onClick={handleAdminDashboard}
-            >
-              <Settings className="h-5 w-5" />
-              Admin Dashboard
-            </Button>
-          </motion.div>
+
 
           {/* Search Bar */}
           <motion.div
