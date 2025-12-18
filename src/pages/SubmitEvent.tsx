@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 // Select component for dropdowns
 import {
   Select,
@@ -503,6 +505,8 @@ const SubmitEvent = () => {
         </main>
 
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

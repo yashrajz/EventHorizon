@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Clock, Users, ArrowLeft, ExternalLink, Share2 } from "lucide-react";
-import { mockEvents } from "@/data/events";
+import { findEventById } from "@/data/events";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -16,10 +16,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ClickSpark from "@/components/ClickSpark";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 
 const EventDetail = () => {
   const { id } = useParams();
-  const event = mockEvents.find((e) => e.id === id);
+  const event = id ? findEventById(id) : undefined;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -59,9 +61,9 @@ const EventDetail = () => {
   };
 
   const handleRegister = () => {
-    if (event) {
-      window.open(event.registrationUrl, '_blank');
-    }
+    if (!event) return;
+    if (!event.registrationUrl) return;
+    window.open(event.registrationUrl, '_blank');
   };
 
   if (!event) {
@@ -290,6 +292,8 @@ const EventDetail = () => {
           </div>
         </main>
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

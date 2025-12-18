@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
-import { mockEvents, categories, matchesQuery, isInDateRange } from "@/data/events";
+import { categories, matchesQuery, isInDateRange, mockEvents, type Event } from "@/data/events";
 import { EventCard } from "./EventCard";
 import { Button } from "./ui/button";
 import { SlidersHorizontal } from "lucide-react";

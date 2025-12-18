@@ -1,230 +1,176 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{
-    user: User | null;
-    error: AuthError | null;
-  }>;
-  signIn: (email: string, password: string) => Promise<{
-    user: User | null;
-    error: AuthError | null;
-  }>;
-  signInWithGoogle: () => Promise<{
-    error: AuthError | null;
-  }>;
-  signInWithGitHub: () => Promise<{
-    error: AuthError | null;
-  }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{
-    error: AuthError | null;
-  }>;
+/**
+ * Unified Authentication Context
+ * Handles all user types: admin, superadmin, attendant, and normal users
+ */
+
+export type UserRole = "admin" | "superadmin" | "attendant" | "user";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signOut: () => void;
+  hasRole: (roles: UserRole[]) => boolean;
+  getRedirectPath: () => string;
+}
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+const AuthContext = createContext<AuthState | undefined>(undefined);
+
+const STORAGE_KEY = "eventhorizon:auth:user";
+
+/**
+ * Mock user database
+ * Replace with real API later
+ */
+const MOCK_USERS: Record<string, { password: string; user: User }> = {
+  "admin@eventhorizon.com": {
+    password: "admin123",
+    user: {
+      id: "1",
+      name: "Admin User",
+      email: "admin@eventhorizon.com",
+      role: "admin",
+    },
+  },
+  "super@eventhorizon.com": {
+    password: "super123",
+    user: {
+      id: "2",
+      name: "Super Admin",
+      email: "super@eventhorizon.com",
+      role: "superadmin",
+    },
+  },
+  "attendant@eventhorizon.com": {
+    password: "attendant123",
+    user: {
+      id: "3",
+      name: "Conference Manager",
+      email: "attendant@eventhorizon.com",
+      role: "attendant",
+    },
+  },
+  "user@example.com": {
+    password: "user123",
+    user: {
+      id: "4",
+      name: "John Doe",
+      email: "user@example.com",
+      role: "user",
+    },
+  },
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Restore session from localStorage
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error getting session:', error);
-      } else {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        setUser(JSON.parse(raw));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
       }
-      setLoading(false);
-    };
-
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // Handle OAuth success
-        if (event === 'SIGNED_IN' && session) {
-          toast.success('Successfully signed in!');
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    }
+    setIsLoading(false);
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
+  /**
+   * Sign in using mock credentials
+   */
+  const signIn = useCallback(async (email: string, password: string) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
-      if (error) {
-        console.error('Signup error:', error);
-        return { user: null, error };
-      }
-
-      // Create profile in our profiles table
-      if (data.user && !error) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              full_name: fullName,
-              email: email,
-            },
-          ]);
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-      }
-
-      return { user: data.user, error };
-    } catch (error) {
-      console.error('Unexpected signup error:', error);
-      return { 
-        user: null, 
-        error: { message: 'An unexpected error occurred during signup' } as AuthError 
-      };
+    const record = MOCK_USERS[email];
+    if (!record || record.password !== password) {
+      return false;
     }
-  };
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    setUser(record.user);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(record.user));
+    return true;
+  }, []);
 
-      if (error) {
-        console.error('Signin error:', error);
-        return { user: null, error };
-      }
+  /**
+   * Sign out and clear session
+   */
+  const signOut = useCallback(() => {
+    setUser(null);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
-      return { user: data.user, error };
-    } catch (error) {
-      console.error('Unexpected signin error:', error);
-      return { 
-        user: null, 
-        error: { message: 'An unexpected error occurred during signin' } as AuthError 
-      };
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      return { error };
-    } catch (error) {
-      console.error('Google signin error:', error);
-      return { 
-        error: { message: 'An unexpected error occurred during Google signin' } as AuthError 
-      };
-    }
-  };
-
-  const signInWithGitHub = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      return { error };
-    } catch (error) {
-      console.error('GitHub signin error:', error);
-      return { 
-        error: { message: 'An unexpected error occurred during GitHub signin' } as AuthError 
-      };
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Signout error:', error);
-        toast.error('Error signing out');
-      } else {
-        toast.success('Signed out successfully');
-      }
-    } catch (error) {
-      console.error('Unexpected signout error:', error);
-      toast.error('An unexpected error occurred during signout');
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      return { error };
-    } catch (error) {
-      console.error('Password reset error:', error);
-      return { 
-        error: { message: 'An unexpected error occurred during password reset' } as AuthError 
-      };
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    session,
-    loading,
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signInWithGitHub,
-    signOut,
-    resetPassword,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  /**
+   * Check if user has one of the required roles
+   */
+  const hasRole = useCallback(
+    (roles: UserRole[]) => {
+      if (!user) return false;
+      return roles.includes(user.role);
+    },
+    [user]
   );
-};
+
+  /**
+   * Get redirect path based on role
+   */
+  const getRedirectPath = useCallback(() => {
+    if (!user) return "/";
+
+    switch (user.role) {
+      case "admin":
+      case "superadmin":
+        return "/admin";
+      case "attendant":
+        return "/attendant";
+      default:
+        return "/";
+    }
+  }, [user]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: !!user,
+      isLoading,
+      signIn,
+      signOut,
+      hasRole,
+      getRedirectPath,
+    }),
+    [user, isLoading, signIn, signOut, hasRole, getRedirectPath]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/**
+ * Hook to access auth context
+ */
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
