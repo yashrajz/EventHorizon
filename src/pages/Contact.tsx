@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 
 const contactInfo = [
   {
@@ -228,6 +230,8 @@ const Contact = () => {
         </main>
 
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

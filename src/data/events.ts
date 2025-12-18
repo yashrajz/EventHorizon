@@ -482,6 +482,14 @@ const isSameMonth = (d1: Date, d2: Date): boolean => {
   return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
 };
 
-const isSameYear = (d1: Date, d2: Date): boolean => {
+export const isSameYear = (d1: Date, d2: Date): boolean => {
   return d1.getFullYear() === d2.getFullYear();
+};
+
+export const getAllEvents = (): Event[] => {
+  return mockEvents;
+};
+
+export const findEventById = (id: string): Event | undefined => {
+  return mockEvents.find((e) => e.id === id);
 };
