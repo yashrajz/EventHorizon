@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ClickSpark from "@/components/ClickSpark";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -293,7 +293,6 @@ const EventDetail = () => {
         </main>
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

@@ -6,7 +6,7 @@ import { HelpCircle, Search, MessageCircle, Mail, BookOpen } from "lucide-react"
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useState, useEffect } from "react";
 
 const HelpCenter = () => {
@@ -221,7 +221,6 @@ const HelpCenter = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </>
   );

@@ -111,7 +111,7 @@ const App = () => {
                   <Route
                     path="/submit-event"
                     element={
-                      <RoleProtectedRoute allowedRoles={["user", "attendant"]}>
+                      <RoleProtectedRoute allowedRoles={["user", "attendant"]} redirectTo="/signin">
                         <SubmitEvent />
                       </RoleProtectedRoute>
                     }

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Target, Users, Zap, Globe } from "lucide-react";
 import ClickSpark from "@/components/ClickSpark";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect } from "react";
 
 const values = [
@@ -151,7 +151,6 @@ const About = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

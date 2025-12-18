@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Scale, FileText, Shield, Cookie } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect } from "react";
 
 const Legal = () => {
@@ -151,7 +151,6 @@ const Legal = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </>
   );

@@ -16,8 +16,12 @@ export const Hero = () => {
   const { isAuthenticated, hasRole } = useAuth();
   const navigate = useNavigate();
 
-  const scrollToEvents = () => {
-    document.getElementById("events-section")?.scrollIntoView({ behavior: "smooth" });
+  const handleSearch = () => {
+    // Scroll to events section to show search results
+    const eventsSection = document.getElementById("events-section");
+    if (eventsSection) {
+      eventsSection.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
 
@@ -100,6 +104,11 @@ export const Hero = () => {
                     placeholder="Search events, organizers, or topics..."
                     value={filters.query}
                     onChange={(e) => updateFilter("query", e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
                     className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
@@ -123,7 +132,7 @@ export const Hero = () => {
                 </div>
 
                 {/* Search Button */}
-                <Button variant="hero" size="lg" className="gap-2" onClick={scrollToEvents}>
+                <Button variant="hero" size="lg" className="gap-2" onClick={handleSearch}>
                   Search
                   <ArrowRight className="h-4 w-4" />
                 </Button>
