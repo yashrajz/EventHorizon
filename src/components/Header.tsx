@@ -21,12 +21,7 @@ export const Header = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast.error("Failed to sign out");
-    } else {
-      toast.success("Signed out successfully");
-    }
+    await signOut();
   };
 
   return (

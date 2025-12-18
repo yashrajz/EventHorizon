@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 // Select component for dropdowns
 import {
   Select,
@@ -22,6 +24,7 @@ import {
 
 const SubmitEvent = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -45,18 +48,90 @@ const SubmitEvent = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!user) {
+      toast.error("Please log in to submit an event.");
+      navigate("/signin");
+      return;
+    }
+
+    // Validate required fields
+    if (!formData.title || !formData.description || !formData.date || !formData.category) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      console.log('Submitting event with user:', user.id);
+      console.log('Form data:', formData);
+      
+      // Map form values to database format values
+      const formatMapping: { [key: string]: string } = {
+        'In-Person': 'in-person',
+        'Online': 'online', 
+        'Hybrid': 'hybrid'
+      };
+      
+      const eventData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        date: formData.date,
+        start_time: formData.startTime || null,
+        end_time: formData.endTime || null,
+        location: formData.venue?.trim() || formData.city?.trim() || null,
+        venue: formData.venue?.trim() || null,
+        city: formData.city?.trim() || null,
+        country: formData.country?.trim() || 'India',
+        format: formatMapping[formData.locationType] || 'in-person',
+        price_type: formData.price === 'paid' ? 'paid' : 'free',
+        price_amount: formData.price === 'paid' && formData.priceAmount ? parseFloat(formData.priceAmount) || 0 : 0,
+        currency: formData.price === 'paid' ? 'INR' : null,
+        category: formData.category,
+        organizer_name: formData.organizer?.trim() || user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+        organizer_email: user.email || '',
+        organizer_website: null,
+        image_url: formData.coverImageUrl?.trim() || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+        registration_url: formData.registrationUrl?.trim() || null,
+        max_attendees: formData.estimatedAttendees ? parseInt(formData.estimatedAttendees) || null : null,
+        tags: formData.category ? [formData.category.toLowerCase()] : [],
+        status: 'pending',
+        created_by: user.id,
+      };
+      
+      console.log('Event data to insert:', eventData);
+      
+      const { data, error } = await supabase
+        .from('events')
+        .insert([eventData])
+        .select();
 
-    // TODO: Replace with actual API call to submit event
-    // Example: const response = await eventService.createEvent(formData);
-    
-    toast.success("Event submitted successfully! We'll review it shortly.");
-    navigate("/");
-    
-    setIsSubmitting(false);
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Event inserted successfully:', data);
+      toast.success("Event submitted successfully! We'll review it within 24 hours.");
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error('Error submitting event:', error);
+      
+      // Provide more specific error messages
+      if (error.message?.includes('permission denied')) {
+        toast.error("Permission denied. Please make sure you're logged in.");
+      } else if (error.message?.includes('violates row-level security')) {
+        toast.error("Security policy violation. Please contact support.");
+      } else if (error.message?.includes('duplicate key')) {
+        toast.error("An event with this information already exists.");
+      } else {
+        toast.error(`Failed to submit event: ${error.message || 'Please try again.'}`);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

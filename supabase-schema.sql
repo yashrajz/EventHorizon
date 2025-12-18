@@ -40,7 +40,9 @@ CREATE TABLE IF NOT EXISTS public.events (
   registration_url TEXT,
   max_attendees INTEGER,
   tags TEXT[],
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'completed')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'active', 'cancelled', 'completed')),
+  reviewed_by UUID REFERENCES auth.users(id),
+  reviewed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   created_by UUID REFERENCES auth.users(id)
@@ -65,8 +67,15 @@ DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profi
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Anyone can view active events" ON public.events;
+DROP POLICY IF EXISTS "Anyone can view approved events" ON public.events;
+DROP POLICY IF EXISTS "Public can view approved events" ON public.events;
+DROP POLICY IF EXISTS "Users can view own events" ON public.events;
+DROP POLICY IF EXISTS "Admins can view all events" ON public.events;
 DROP POLICY IF EXISTS "Users can create events" ON public.events;
 DROP POLICY IF EXISTS "Users can edit own events" ON public.events;
+DROP POLICY IF EXISTS "Admins can update any event" ON public.events;
+DROP POLICY IF EXISTS "Admins have full access" ON public.events;
+DROP POLICY IF EXISTS "Admin full access" ON public.events;
 DROP POLICY IF EXISTS "Users manage own favorites" ON public.favorites;
 
 -- 6. Create RLS Policies for profiles
@@ -80,14 +89,38 @@ CREATE POLICY "Users can update their own profile"
 ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
 -- 7. Create RLS Policies for events
-CREATE POLICY "Anyone can view active events" 
-ON public.events FOR SELECT USING (status = 'active');
+-- Public can view approved and active events
+CREATE POLICY "Public can view approved events" 
+ON public.events FOR SELECT USING (status IN ('approved', 'active'));
 
+-- Authenticated users can view their own events (any status)
+CREATE POLICY "Users can view own events"
+ON public.events FOR SELECT USING (auth.uid() = created_by);
+
+-- Authenticated users can create events
 CREATE POLICY "Users can create events" 
 ON public.events FOR INSERT WITH CHECK (auth.uid() = created_by);
 
+-- Admin gets full access (check first)
+CREATE POLICY "Admin full access"
+ON public.events FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM auth.users 
+    WHERE id = auth.uid() 
+    AND email = 'yashrajz.me@gmail.com'
+  )
+);
+
+-- Users can update their own events (only if not admin)
 CREATE POLICY "Users can edit own events" 
-ON public.events FOR UPDATE USING (auth.uid() = created_by);
+ON public.events FOR UPDATE USING (
+  auth.uid() = created_by AND 
+  NOT EXISTS (
+    SELECT 1 FROM auth.users 
+    WHERE id = auth.uid() 
+    AND email = 'yashrajz.me@gmail.com'
+  )
+);
 
 -- 8. Create RLS Policies for favorites
 CREATE POLICY "Users manage own favorites" 

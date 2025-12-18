@@ -19,6 +19,7 @@ import EventDetail from "./pages/EventDetail";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,14 @@ const App = () => {
                     element={
                       <ProtectedRoute>
                         <Dashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin" 
+                    element={
+                      <ProtectedRoute>
+                        <Admin />
                       </ProtectedRoute>
                     } 
                   />
