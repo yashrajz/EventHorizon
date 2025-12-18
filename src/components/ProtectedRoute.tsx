@@ -5,9 +5,15 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+/**
+ * Simple authentication-only route protection
+ * Redirects to /signin if user is not authenticated
+ *
+ * @deprecated Use RoleProtectedRoute for role-based access control
+ */
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const location = useLocation();
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   // Show loading state while checking authentication
   if (loading) {
@@ -19,8 +25,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
-    // Redirect to sign in page, but save the location they were trying to access
-    return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
+    return (
+      <Navigate
+        to="/signin"
+        state={{ from: location.pathname }}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;

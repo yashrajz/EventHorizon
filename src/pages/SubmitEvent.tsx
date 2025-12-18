@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
 // Select component for dropdowns
 import {
   Select,
@@ -48,14 +50,16 @@ const SubmitEvent = () => {
     setIsSubmitting(true);
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // TODO: Replace with actual API call to submit event
-    // Example: const response = await eventService.createEvent(formData);
+    // In a real application, this would send the data to your backend API
+    console.log("Event submission data:", formData);
     
-    toast.success("Event submitted successfully! We'll review it shortly.");
+    toast.success("Event submitted successfully!", {
+      description: "Your event has been received and will be reviewed."
+    });
+    
     navigate("/");
-    
     setIsSubmitting(false);
   };
 
@@ -428,6 +432,8 @@ const SubmitEvent = () => {
         </main>
 
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );

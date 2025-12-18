@@ -4,6 +4,9 @@ import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Target, Users, Zap, Globe } from "lucide-react";
 import ClickSpark from "@/components/ClickSpark";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+import { useEffect } from "react";
 
 const values = [
   {
@@ -29,6 +32,10 @@ const values = [
 ];
 
 const About = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <ClickSpark 
       sparkColor="#6b7280" 
@@ -143,6 +150,8 @@ const About = () => {
         </main>
 
         <Footer />
+        <ScrollToTopButton />
+        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );
