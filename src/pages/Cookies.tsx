@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Cookie } from "lucide-react";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect } from "react";
 
 const Cookies = () => {
@@ -206,7 +206,6 @@ const Cookies = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </>
   );

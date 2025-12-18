@@ -7,7 +7,7 @@ const footerLinks = {
     { name: "Events", path: "/" },
     { name: "Categories", path: "/" },
     { name: "Submit Event", path: "/submit-event" },
-    { name: "Pricing", path: "/" }
+    { name: "Pricing", path: "/about" }
   ],
   Company: [
     { name: "About", path: "/about" },
@@ -17,7 +17,7 @@ const footerLinks = {
   ],
   Resources: [
     { name: "Help Center", path: "/help" },
-    { name: "API", path: "/" },
+    { name: "API", path: "/contact" },
     { name: "Partners", path: "/partners" },
     { name: "Community", path: "/community" }
   ],
@@ -41,7 +41,7 @@ export const Footer = () => {
         <div className="grid gap-12 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <Link to="/">
+            <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <motion.div
                 className="flex items-center gap-2 cursor-pointer"
                 whileHover={{ scale: 1.02 }}

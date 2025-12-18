@@ -8,8 +8,6 @@ import { Footer } from "@/components/Footer";
 import SEO from "@/components/SEO";
 import ClickSpark from "@/components/ClickSpark";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
-
 const Index = () => {
   return (
 <ClickSpark 
@@ -25,13 +23,14 @@ const Index = () => {
         <main>
           <Hero />
           <BentoGrid />
-          <EventsSection />
+          <div id="events-section">
+            <EventsSection />
+          </div>
           <FeaturesSection />
           <NewsletterSection />
         </main>
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </ClickSpark>
   );
