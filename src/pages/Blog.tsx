@@ -6,7 +6,7 @@ import { Calendar, Clock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect } from "react";
 
 const Blog = () => {
@@ -235,7 +235,6 @@ const Blog = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </>
   );

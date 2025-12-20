@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useAuth } from "@/contexts/AuthContext";
 
 const SignIn = () => {
@@ -172,7 +172,7 @@ const SignIn = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
+
       </div>
     </ClickSpark>
   );
