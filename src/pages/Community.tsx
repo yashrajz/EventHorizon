@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect, useState } from "react";
 
 const Community = () => {
@@ -373,7 +373,7 @@ const Community = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
+
       </div>
     </>
   );

@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect } from "react";
 
 const Privacy = () => {
@@ -155,7 +155,7 @@ const Privacy = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
+
       </div>
     </>
   );

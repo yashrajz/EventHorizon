@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -195,7 +195,7 @@ const SignUp = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
+
       </div>
     </ClickSpark>
   );

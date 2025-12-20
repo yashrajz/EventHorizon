@@ -6,7 +6,7 @@ import { Briefcase, MapPin, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { JobApplicationForm } from "@/components/JobApplicationForm";
 import { useEffect, useState, useRef } from "react";
 
@@ -227,7 +227,6 @@ const Careers = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
       </div>
     </>
   );

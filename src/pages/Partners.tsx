@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Handshake, Mail, Linkedin, Twitter, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect } from "react";
 
 const Partners = () => {
@@ -189,7 +189,7 @@ const Partners = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
+
       </div>
     </>
   );

@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import { ScrollToBottomButton } from "@/components/ScrollToBottomButton";
+
 import { useEffect } from "react";
 
 const Terms = () => {
@@ -185,7 +185,7 @@ const Terms = () => {
 
         <Footer />
         <ScrollToTopButton />
-        <ScrollToBottomButton />
+
       </div>
     </>
   );
