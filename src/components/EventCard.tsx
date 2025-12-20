@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
-import { Calendar, MapPin, ArrowUpRight, Share2, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, ArrowUpRight, Share2, ExternalLink, ImageOff, Radio } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Event } from "@/data/events";
 import { Button } from "./ui/button";
 import { toast } from "@/hooks/use-toast";
+import { getCategoryGradient, getPatternOverlay, getCategoryImage } from "@/lib/imageUtils";
+import { getEventTiming, getCountdownText } from "@/lib/eventTiming";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +20,18 @@ interface EventCardProps {
 }
 
 export const EventCard = ({ event, index }: EventCardProps) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [timing, setTiming] = useState(() => getEventTiming(event));
+
+  // Update timing every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTiming(getEventTiming(event));
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [event]);
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
@@ -73,17 +88,61 @@ export const EventCard = ({ event, index }: EventCardProps) => {
         </div>
 
       {/* Image Header */}
-      <div className="relative h-48 overflow-hidden bg-muted">
-        <img 
-          src={event.coverImage} 
-          alt={event.title}
-          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-125 group-hover:rotate-2"
-          loading="lazy"
+      <div className="relative h-48 overflow-hidden">
+        {/* Fast-loading gradient background */}
+        <div 
+          className="absolute inset-0 opacity-90"
+          style={{ 
+            background: getCategoryGradient(event.category),
+          }}
         />
+        {/* Pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{ 
+            backgroundImage: getPatternOverlay(),
+            backgroundSize: '60px 60px',
+          }}
+        />
+        {/* Category-based static image */}
+        {!imageError && (
+          <img 
+            src={getCategoryImage(event.category, event.id)}
+            alt={event.title}
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-125 group-hover:rotate-2 opacity-0"
+            loading="lazy"
+            onLoad={(e) => {
+              setImageLoading(false);
+              e.currentTarget.style.opacity = '0.8';
+            }}
+            onError={() => {
+              setImageError(true);
+              setImageLoading(false);
+            }}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
         
         {/* Tags */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-2 z-10">
+          {/* Status Badge */}
+          {timing.status === "live" && (
+            <span className="rounded-full bg-red-500/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm flex items-center gap-1.5 animate-pulse">
+              <Radio className="h-3 w-3" />
+              LIVE NOW
+            </span>
+          )}
+          {timing.status === "ended" && (
+            <span className="rounded-full bg-gray-500/90 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+              ENDED
+            </span>
+          )}
+          {timing.status === "upcoming" && timing.startsIn && (
+            <span className="rounded-full bg-blue-500/90 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+              Starts in {timing.startsIn}
+            </span>
+          )}
+          
           <span className="rounded-full bg-accent/90 px-3 py-1 text-xs font-medium text-accent-foreground backdrop-blur-sm">
             {event.category}
           </span>
