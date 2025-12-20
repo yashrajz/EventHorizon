@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 /**
  * Unified Authentication Context
@@ -27,6 +28,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
   signOut: () => void;
   hasRole: (roles: UserRole[]) => boolean;
   getRedirectPath: () => string;
@@ -113,6 +115,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
+   * Sign in with Google OAuth
+   */
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      if (!isSupabaseConfigured) {
+        // Mock Google sign-in for development
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        const mockGoogleUser: User = {
+          id: `google_${Date.now()}`,
+          name: "Google User",
+          email: "user@gmail.com",
+          role: "user",
+          avatar: "https://lh3.googleusercontent.com/a/default-user=s96-c"
+        };
+        
+        setUser(mockGoogleUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mockGoogleUser));
+        return true;
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Google sign-in error:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      return false;
+    }
+  }, []);
+
+  /**
    * Sign out and clear session
    */
   const signOut = useCallback(() => {
@@ -154,11 +201,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       signIn,
+      signInWithGoogle,
       signOut,
       hasRole,
       getRedirectPath,
     }),
-    [user, isLoading, signIn, signOut, hasRole, getRedirectPath]
+    [user, isLoading, signIn, signInWithGoogle, signOut, hasRole, getRedirectPath]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
