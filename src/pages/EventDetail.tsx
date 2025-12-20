@@ -24,9 +24,15 @@ import {
   BookmarkPlus,
   ArrowUpRight,
   Eye,
-  Bookmark
+  Bookmark,
+  ImageOff,
+  Radio,
+  Play
 } from "lucide-react";
-import { findEventById, mockEvents, type Event } from "@/data/events";
+import { type Event } from "@/data/events";
+import { getCategoryGradient, getPatternOverlay, getCategoryImage } from "@/lib/imageUtils";
+import { getEventTiming, formatEventTime, getCountdownText } from "@/lib/eventTiming";
+import { getEventsAPI } from "@/services/api";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -34,6 +40,7 @@ import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { toast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -48,18 +55,62 @@ import LightRays from "@/components/LightRays";
 
 const EventDetail = () => {
   const { id } = useParams();
-  const event = id ? findEventById(id) : undefined;
+  const [event, setEvent] = useState<Event | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
+  const [imageError, setImageError] = useState(false);
+  const [timing, setTiming] = useState<ReturnType<typeof getEventTiming> | null>(null);
+
+  // Update timing every minute
+  useEffect(() => {
+    if (!event) return;
+    
+    setTiming(getEventTiming(event));
+    const interval = setInterval(() => {
+      setTiming(getEventTiming(event));
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, [event]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    // Simulate engagement data
-    if (event) {
-      setLikesCount(Math.floor(event.views * 0.15));
+    fetchEventData();
+  }, [id]);
+
+  const fetchEventData = async () => {
+    if (!id) return;
+    
+    setIsLoading(true);
+    try {
+      const api = getEventsAPI();
+      const fetchedEvent = await api.fetchEventById(id);
+      
+      if (fetchedEvent) {
+        setEvent(fetchedEvent);
+        setLikesCount(Math.floor(fetchedEvent.views * 0.15));
+        
+        // Fetch similar events
+        const allEvents = await api.fetchEvents({ category: fetchedEvent.category, limit: 4 });
+        setSimilarEvents(allEvents.filter(e => e.id !== id).slice(0, 3));
+      } else {
+        setEvent(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch event:', error);
+      toast({
+        title: "Error loading event",
+        description: "Failed to load event details. Please try again.",
+        variant: "destructive",
+      });
+      setEvent(null);
+    } finally {
+      setIsLoading(false);
     }
-  }, [id, event]);
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -125,11 +176,22 @@ const EventDetail = () => {
 
   // Get similar events (mock data)
   const getSimilarEvents = () => {
-    if (!event) return [];
-    return mockEvents
-      .filter((e) => e.id !== event.id && e.category === event.category)
-      .slice(0, 3);
+    return similarEvents;
   };
+
+  if (isLoading) {
+    return (
+      <ClickSpark sparkColor="#6b7280" sparkSize={12} sparkRadius={20} sparkCount={10} duration={500}>
+        <div className="min-h-screen">
+          <Header />
+          <main className="py-32 flex items-center justify-center">
+            <LoadingSpinner />
+          </main>
+          <Footer />
+        </div>
+      </ClickSpark>
+    );
+  }
 
   if (!event) {
     return (
@@ -169,10 +231,31 @@ const EventDetail = () => {
         <section className="relative h-[60vh] min-h-[500px] overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0">
+            {/* Fast-loading gradient background */}
+            <div 
+              className="absolute inset-0"
+              style={{ 
+                background: getCategoryGradient(event.category),
+              }}
+            />
+            {/* Pattern overlay */}
+            <div 
+              className="absolute inset-0 opacity-20"
+              style={{ 
+                backgroundImage: getPatternOverlay(),
+                backgroundSize: '60px 60px',
+              }}
+            />
+            {/* Category-based static image */}
             <img 
-              src={event.coverImage} 
+              src={getCategoryImage(event.category, event.id)}
               alt={event.title}
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-700"
+              onLoad={(e) => {
+                setImageError(false);
+                e.currentTarget.style.opacity = '0.7';
+              }}
+              onError={() => setImageError(true)}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
           </div>
@@ -208,6 +291,25 @@ const EventDetail = () => {
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2 mb-4">
+                  {/* Status Badge */}
+                  {timing && timing.status === "live" && (
+                    <Badge className="px-3 py-1.5 bg-red-500/95 hover:bg-red-500 text-white border-0 animate-pulse flex items-center gap-1.5 font-bold">
+                      <Radio className="h-3.5 w-3.5" />
+                      LIVE NOW • Ends in {timing.endsIn}
+                    </Badge>
+                  )}
+                  {timing && timing.status === "upcoming" && timing.startsIn && (
+                    <Badge className="px-3 py-1.5 bg-blue-500/95 hover:bg-blue-500 text-white border-0 flex items-center gap-1.5 font-semibold">
+                      <Play className="h-3.5 w-3.5" />
+                      Starts in {timing.startsIn}
+                    </Badge>
+                  )}
+                  {timing && timing.status === "ended" && (
+                    <Badge className="px-3 py-1.5 bg-gray-500/95 text-white border-0 font-semibold">
+                      Event Ended
+                    </Badge>
+                  )}
+                  
                   <Badge variant="default" className="px-3 py-1 bg-accent/90 hover:bg-accent text-accent-foreground border-0">
                     <Sparkles className="h-3 w-3 mr-1" />
                     {event.category}
@@ -269,6 +371,79 @@ const EventDetail = () => {
 
         <main className="pb-20 -mt-8 relative z-10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Event Timing Card */}
+            {timing && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className={`glass-card p-6 mb-6 border-2 ${
+                  timing.status === "live" 
+                    ? "border-red-500/50 bg-red-500/5" 
+                    : timing.status === "upcoming"
+                    ? "border-blue-500/50 bg-blue-500/5"
+                    : "border-gray-500/30"
+                }`}
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-full ${
+                      timing.status === "live" 
+                        ? "bg-red-500/20" 
+                        : timing.status === "upcoming"
+                        ? "bg-blue-500/20"
+                        : "bg-gray-500/20"
+                    }`}>
+                      <Clock className={`h-6 w-6 ${
+                        timing.status === "live" 
+                          ? "text-red-400" 
+                          : timing.status === "upcoming"
+                          ? "text-blue-400"
+                          : "text-gray-400"
+                      }`} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg text-foreground mb-1">
+                        {timing.status === "live" && "Event is Live Now!"}
+                        {timing.status === "upcoming" && "Upcoming Event"}
+                        {timing.status === "ended" && "Event Has Ended"}
+                      </h3>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>
+                          <span className="font-medium">Starts:</span> {formatEventTime(timing.startTime)}
+                        </p>
+                        <p>
+                          <span className="font-medium">Ends:</span> {formatEventTime(timing.endTime)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {timing.status === "live" && timing.endsIn && (
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-red-400 animate-pulse">
+                        {timing.endsIn}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        until event ends
+                      </div>
+                    </div>
+                  )}
+                  
+                  {timing.status === "upcoming" && timing.startsIn && (
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-400">
+                        {timing.startsIn}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        until event starts
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+            
             {/* Analytics Bar */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -461,11 +636,28 @@ const EventDetail = () => {
                           className="block group"
                         >
                           <div className="flex gap-4 p-4 rounded-xl bg-glass/30 hover:bg-glass/60 transition-all border border-transparent hover:border-accent/30">
-                            <img 
-                              src={similarEvent.coverImage} 
-                              alt={similarEvent.title}
-                              className="w-20 h-20 rounded-lg object-cover"
-                            />
+                            <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                              {/* Fast-loading gradient background */}
+                              <div 
+                                className="absolute inset-0"
+                                style={{ 
+                                  background: getCategoryGradient(similarEvent.category),
+                                }}
+                              />
+                              {/* Category-based static image */}
+                              <img 
+                                src={getCategoryImage(similarEvent.category, similarEvent.id)}
+                                alt={similarEvent.title}
+                                className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500"
+                                loading="lazy"
+                                onLoad={(e) => {
+                                  e.currentTarget.style.opacity = '0.8';
+                                }}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-foreground mb-1 line-clamp-1 group-hover:text-accent transition-colors">
                                 {similarEvent.title}
