@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
+import { GoogleIcon } from "@/components/GoogleIcon";
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ClickSpark from "@/components/ClickSpark";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 const SignUp = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signInWithGoogle, getRedirectPath } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,6 +31,26 @@ const SignUp = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const from = (location.state as any)?.from || "/signin";
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+
+    try {
+      const success = await signInWithGoogle();
+
+      if (!success) {
+        toast.error("Failed to sign in with Google");
+        return;
+      }
+
+      toast.success("Welcome! Account created with Google");
+      navigate(from || getRedirectPath(), { replace: true });
+    } catch {
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +129,7 @@ const SignUp = () => {
                     <Input
                       id="name"
                       name="name"
+                      placeholder="Enter your full name"
                       value={formData.name}
                       onChange={handleChange}
                       required
@@ -122,6 +146,7 @@ const SignUp = () => {
                       id="email"
                       name="email"
                       type="email"
+                      placeholder="Enter your email address"
                       value={formData.email}
                       onChange={handleChange}
                       required
@@ -138,6 +163,7 @@ const SignUp = () => {
                       id="password"
                       name="password"
                       type="password"
+                      placeholder="Create a strong password (8+ characters)"
                       value={formData.password}
                       onChange={handleChange}
                       required
@@ -155,6 +181,7 @@ const SignUp = () => {
                       id="confirmPassword"
                       name="confirmPassword"
                       type="password"
+                      placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
@@ -182,6 +209,24 @@ const SignUp = () => {
                   {isLoading ? "Processing..." : <>Create Account <ArrowRight className="ml-2 h-5 w-5" /></>}
                 </Button>
               </form>
+
+              {/* Divider */}
+              <div className="flex items-center my-6">
+                <div className="flex-1 border-t border-border"></div>
+                <span className="px-3 text-sm text-muted-foreground">or</span>
+                <div className="flex-1 border-t border-border"></div>
+              </div>
+
+              {/* Google Sign Up */}
+              <Button
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full py-6 border-2 hover:bg-muted/50 mb-6"
+              >
+                <GoogleIcon className="mr-2 h-5 w-5" />
+                Continue with Google
+              </Button>
 
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
