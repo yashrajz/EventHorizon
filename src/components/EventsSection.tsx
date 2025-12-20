@@ -1,22 +1,61 @@
 import { motion } from "framer-motion";
-import { useState, useMemo } from "react";
-import { categories, matchesQuery, isInDateRange, mockEvents, type Event } from "@/data/events";
+import { useState, useMemo, useEffect } from "react";
+import { categories, matchesQuery, isInDateRange, type Event } from "@/data/events";
 import { EventCard } from "./EventCard";
 import { Button } from "./ui/button";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, RefreshCw } from "lucide-react";
 import ScrollReveal from "./ScrollReveal";
 import { useSearch } from "@/contexts/SearchContext";
 import { DateCombobox } from "./ui/date-combobox";
 import { LocationCombobox } from "./ui/location-combobox";
+import { LoadingSpinner } from "./LoadingSpinner";
+import { getEventsAPI } from "@/services/api";
+import { toast } from "@/hooks/use-toast";
+import { filterActiveEvents } from "@/lib/eventTiming";
 
 export const EventsSection = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { filters, updateFilter, resetFilters } = useSearch();
 
+  // Fetch events from API
+  const fetchEvents = async () => {
+    setIsLoading(true);
+    try {
+      const api = getEventsAPI();
+      const fetchedEvents = await api.fetchEvents({
+        query: filters.query,
+        location: filters.location !== "All Locations" ? filters.location : undefined,
+        category: activeCategory !== "All" ? activeCategory : undefined,
+        limit: 50,
+      });
+      setEvents(fetchedEvents);
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+      toast({
+        title: "Error loading events",
+        description: "Failed to fetch events. Please try again.",
+        variant: "destructive",
+      });
+      setEvents([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch and refetch on filter changes
+  useEffect(() => {
+    fetchEvents();
+  }, [activeCategory, filters.query, filters.location]);
+
   const filteredEvents = useMemo(() => {
-    return mockEvents.filter((event) => {
+    // First filter out auto-removed events (ended more than 3 hours ago)
+    const activeEvents = filterActiveEvents(events);
+    
+    return activeEvents.filter((event) => {
       // Category filter
       if (activeCategory !== "All" && event.category !== activeCategory) {
         return false;
@@ -56,7 +95,7 @@ export const EventsSection = () => {
 
       return true;
     });
-  }, [activeCategory, filters]);
+  }, [events, filters, activeCategory]);
 
   return (
     <section id="events-section" className="py-20">
@@ -80,18 +119,29 @@ export const EventsSection = () => {
               Upcoming Events
             </ScrollReveal>
             <p className="mt-2 text-muted-foreground">
-              Hand-picked events for founders, investors, and builders
+              {isLoading ? 'Loading events...' : `${filteredEvents.length} events found`}
             </p>
           </div>
 
-          <Button
-            variant="glass"
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2 self-start md:self-auto"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="glass"
+              onClick={fetchEvents}
+              className="gap-2"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button
+              variant="glass"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+            </Button>
+          </div>
         </motion.div>
 
         {/* Category Filters */}
@@ -190,14 +240,36 @@ export const EventsSection = () => {
         )}
 
         {/* Events Grid */}
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredEvents.slice(0, visibleCount).map((event, index) => (
-            <EventCard key={event.id} event={event} index={index} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="mt-10 flex items-center justify-center py-20">
+            <LoadingSpinner />
+          </div>
+        ) : filteredEvents.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-10 text-center py-20"
+          >
+            <p className="text-2xl font-display font-semibold text-foreground mb-2">
+              No events found
+            </p>
+            <p className="text-muted-foreground mb-6">
+              Try adjusting your filters or search query
+            </p>
+            <Button variant="accent" onClick={() => { resetFilters(); setActiveCategory("All"); }}>
+              Clear All Filters
+            </Button>
+          </motion.div>
+        ) : (
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredEvents.slice(0, visibleCount).map((event, index) => (
+              <EventCard key={event.id} event={event} index={index} />
+            ))}
+          </div>
+        )}
 
         {/* Load More */}
-        {visibleCount < filteredEvents.length && (
+        {!isLoading && visibleCount < filteredEvents.length && (
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
