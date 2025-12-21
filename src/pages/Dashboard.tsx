@@ -152,7 +152,7 @@ const Dashboard = () => {
             className="mb-8"
           >
             <h1 className="text-4xl font-bold text-foreground mb-2">
-              Welcome back, {profile?.full_name || user.email?.split('@')[0] || 'there'}! 👋
+              Welcome back, {profile?.full_name || user.name || user.email?.split('@')[0] || 'there'}! 👋
             </h1>
             <p className="text-muted-foreground">
               Manage your profile and discover your saved events

@@ -109,19 +109,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const signIn = useCallback(async (email: string, password: string) => {
     try {
+      console.log('🔐 Attempting signin...', { email });
       const response = await apiClient.signin({ email, password });
+      console.log('📥 Signin response:', response);
       
       if (response.success && response.user) {
         const convertedUser = convertMongoUserToUser(response.user);
+        console.log('✅ Setting user:', convertedUser);
         setUser(convertedUser);
         return { success: true };
       } else {
+        console.log('❌ Signin failed:', response.message || response.error);
         return { 
           success: false, 
-          error: response.error || 'Invalid credentials' 
+          error: response.message || response.error || 'Invalid credentials' 
         };
       }
     } catch (error: any) {
+      console.error('❌ Signin exception:', error);
       return { 
         success: false, 
         error: error.message || 'Sign in failed' 
