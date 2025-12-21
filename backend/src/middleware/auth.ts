@@ -46,3 +46,16 @@ export const authorize = (roles: string[]) => {
     next();
   };
 };
+
+// SuperUser-only middleware
+export const requireSuperUser = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  if (req.user.role !== 'superadmin' || req.user.email !== 'superuser@eventhorizon.com') {
+    return res.status(403).json({ success: false, message: 'SuperUser access required' });
+  }
+
+  next();
+};

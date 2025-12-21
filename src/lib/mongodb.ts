@@ -84,6 +84,10 @@ export interface ApiResponse<T = any> {
 
 export interface AuthResponse {
   success: boolean;
+  data?: {
+    user?: MongoUser;
+    token?: string;
+  };
   user?: MongoUser;
   token?: string;
   message?: string;
@@ -151,11 +155,18 @@ class ApiClient {
       body: JSON.stringify(credentials),
     });
 
-    if (response.success && response.token) {
-      this.setToken(response.token);
+    // Handle response with data wrapper
+    const token = response.data?.token || response.token;
+    if (response.success && token) {
+      this.setToken(token);
     }
 
-    return response;
+    // Normalize response format for frontend
+    return {
+      ...response,
+      user: response.data?.user || response.user,
+      token: token
+    };
   }
 
   async signout(): Promise<void> {
@@ -223,6 +234,41 @@ class ApiClient {
       method: 'PUT',
       body: JSON.stringify({ adminNotes }),
     });
+  }
+
+  async deleteEvent(eventId: string): Promise<ApiResponse<void>> {
+    return this.request<ApiResponse<void>>(`/admin/events/${eventId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async exportEventsCSV(): Promise<void> {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`${this.baseURL}/admin/events/export/csv`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export events');
+    }
+
+    // Create download link
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `events-export-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 }
 

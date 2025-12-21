@@ -8,79 +8,104 @@ import {
   MapPin, 
   Users,
   Clock,
-  Home
+  Home,
+  AlertCircle,
+  Trash2,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { apiClient } from "@/lib/mongodb";
 import SEO from "@/components/SEO";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface PendingEvent {
-  id: number;
+  _id: string;
   title: string;
   description: string;
-  date: string;
-  location: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  locationType: string;
+  venue?: string;
   city: string;
-  country: string;
-  format: string;
-  price_type: string;
-  price_amount: number;
+  country?: string;
+  price: string;
+  priceAmount?: string;
   category: string;
-  organizer_name: string;
-  organizer_email: string;
-  image_url: string;
-  registration_url: string;
+  organizer: string;
+  eventUrl: string;
+  registrationUrl: string;
+  coverImage: string;
   status: string;
-  created_at: string;
-  created_by: string;
+  submittedAt: string;
+  createdBy: {
+    name: string;
+    email: string;
+  };
 }
 
 const Admin = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<PendingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  });
+
+  // Check if user is admin
+  useEffect(() => {
+    if (!loading && user && user.role !== 'superadmin') {
+      toast.error('Only SuperUser can access the admin panel');
+      navigate('/');
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (user) {
       fetchEvents();
+      fetchStats();
     }
   }, [filter, user]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await apiClient.request('/admin/stats');
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch (error: any) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
       console.log('Fetching events with filter:', filter);
-      console.log('User info:', { email: user?.email, id: user?.id });
+      console.log('User role:', user?.role);
       
-      let query = supabase
-        .from('events')
-        .select('*');
-
-      if (filter !== 'all') {
-        query = query.eq('status', filter);
+      const response = await apiClient.request(`/admin/events?status=${filter}`);
+      
+      if (response.success && response.data) {
+        console.log('Successfully fetched events:', response.data.length);
+        setEvents(response.data);
+      } else {
+        throw new Error(response.message || 'Failed to fetch events');
       }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      console.log('Query result:', { data, error });
-      
-      if (error) {
-        console.error('Supabase error details:', error);
-        throw error;
-      }
-      
-      console.log('Successfully fetched events:', data?.length || 0);
-      setEvents(data || []);
     } catch (error: any) {
       console.error('Error fetching events:', error);
       
-      if (error.message?.includes('permission denied') || error.message?.includes('row-level security')) {
-        toast.error('Admin permission required to view events');
+      if (error.message?.includes('permission') || error.message?.includes('401') || error.message?.includes('403')) {
+        toast.error('Admin permission required. Please sign out and sign in again.');
       } else {
         toast.error(`Failed to load events: ${error.message}`);
       }
@@ -89,41 +114,60 @@ const Admin = () => {
     }
   };
 
-  const handleEventAction = async (eventId: number, action: 'approved' | 'rejected') => {
+  const handleEventAction = async (eventId: string, action: 'approved' | 'rejected') => {
     try {
-      console.log('Admin action:', { eventId, action, userEmail: user?.email, userId: user?.id });
+      console.log('Admin action:', { eventId, action, userRole: user?.role });
       
-      // Check session and JWT token
-      const { data: session } = await supabase.auth.getSession();
-      console.log('Current session:', session);
-      console.log('JWT payload:', session.session?.access_token);
-      
-      const { data, error } = await supabase
-        .from('events')
-        .update({ 
-          status: action,
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString()
-        })
-        .eq('id', eventId)
-        .select();
+      const response = action === 'approved' 
+        ? await apiClient.approveEvent(eventId)
+        : await apiClient.rejectEvent(eventId, 'Event rejected by admin');
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+      if (response.success) {
+        console.log('Update successful');
+        toast.success(`Event ${action} successfully!`);
+        fetchEvents();
+      } else {
+        throw new Error(response.message || `Failed to ${action} event`);
       }
-
-      console.log('Update successful:', data);
-      toast.success(`Event ${action} successfully!`);
-      fetchEvents();
     } catch (error: any) {
       console.error('Error updating event:', error);
       
-      if (error.message?.includes('permission denied') || error.message?.includes('row-level security')) {
-        toast.error(`Permission denied. Admin access required to ${action} events.`);
+      if (error.message?.includes('permission') || error.message?.includes('401') || error.message?.includes('403')) {
+        toast.error(`Admin access required. Please sign out and sign in again.`);
       } else {
         toast.error(`Failed to ${action} event: ${error.message}`);
       }
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.deleteEvent(eventId);
+      
+      if (response.success) {
+        toast.success('Event deleted successfully');
+        fetchEvents();
+      } else {
+        throw new Error(response.message || 'Failed to delete event');
+      }
+    } catch (error: any) {
+      console.error('Error deleting event:', error);
+      toast.error(`Failed to delete event: ${error.message}`);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      toast.info('Preparing export...');
+      await apiClient.exportEventsCSV();
+      toast.success('Events exported successfully!');
+    } catch (error: any) {
+      console.error('Error exporting events:', error);
+      toast.error(`Failed to export events: ${error.message}`);
     }
   };
 
@@ -139,8 +183,8 @@ const Admin = () => {
     );
   }
 
-  // Admin check - replace with your email
-  const isAdmin = user?.email === 'yashrajz.me@gmail.com';
+  // Check if user has admin role
+  const isAdmin = user?.role === 'superadmin' && user?.email === 'superuser@eventhorizon.com';
 
   if (!isAdmin) {
     return (
@@ -150,11 +194,14 @@ const Admin = () => {
         <div className="min-h-screen bg-background flex items-center justify-center pt-20">
           <div className="text-center glass-card p-8 max-w-md">
             <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <X className="w-8 h-8 text-red-500" />
+              <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
-            <p className="text-muted-foreground mb-6">
-              You don't have permission to access the admin panel.
+            <p className="text-muted-foreground mb-4">
+              Only the SuperUser can access the admin panel.
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              This area is restricted to the website owner only.
             </p>
             <Link to="/">
               <Button className="gap-2">
@@ -168,13 +215,6 @@ const Admin = () => {
       </>
     );
   }
-
-  const stats = {
-    pending: events.filter(e => e.status === 'pending').length,
-    approved: events.filter(e => e.status === 'approved').length,
-    rejected: events.filter(e => e.status === 'rejected').length,
-    total: events.length
-  };
 
   return (
     <>
@@ -226,20 +266,30 @@ const Admin = () => {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex gap-2 mb-6 overflow-x-auto">
-            {(['all', 'pending', 'approved', 'rejected'] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  filter === status
-                    ? 'bg-accent text-black'
-                    : 'bg-glass text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ))}
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
+            <div className="flex gap-2 overflow-x-auto flex-1">
+              {(['all', 'pending', 'approved', 'rejected'] as const).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    filter === status
+                      ? 'bg-accent text-black'
+                      : 'bg-glass text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+            </div>
+            <Button 
+              onClick={handleExportCSV}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+              size="sm"
+            >
+              <Download className="w-4 h-4" />
+              Export to CSV
+            </Button>
           </div>
 
           {/* Events List */}
@@ -260,7 +310,7 @@ const Admin = () => {
             ) : (
               events.map((event) => (
                 <motion.div
-                  key={event.id}
+                  key={event._id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="glass-card p-6"
@@ -269,7 +319,7 @@ const Admin = () => {
                     {/* Event Image */}
                     <div className="lg:w-48 h-32 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
                       <img 
-                        src={event.image_url} 
+                        src={event.coverImage} 
                         alt={event.title}
                         className="w-full h-full object-cover"
                       />
@@ -285,15 +335,15 @@ const Admin = () => {
                           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
                             <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
-                              {new Date(event.date).toLocaleDateString()}
+                              {new Date(event.startDate).toLocaleDateString()}
                             </div>
                             <div className="flex items-center gap-1">
                               <MapPin className="w-4 h-4" />
-                              {event.city}, {event.country}
+                              {event.city}{event.country ? `, ${event.country}` : ''}
                             </div>
                             <div className="flex items-center gap-1">
                               <Users className="w-4 h-4" />
-                              {event.format}
+                              {event.locationType}
                             </div>
                           </div>
                         </div>
@@ -313,7 +363,7 @@ const Admin = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">Organizer:</span>
-                          <div className="font-medium text-foreground">{event.organizer_name}</div>
+                          <div className="font-medium text-foreground">{event.organizer}</div>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Category:</span>
@@ -322,13 +372,13 @@ const Admin = () => {
                         <div>
                           <span className="text-muted-foreground">Price:</span>
                           <div className="font-medium text-foreground">
-                            {event.price_type === 'free' ? 'Free' : `₹${event.price_amount}`}
+                            {event.price === 'Free' ? 'Free' : event.priceAmount ? `₹${event.priceAmount}` : 'Paid'}
                           </div>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Submitted:</span>
                           <div className="font-medium text-foreground">
-                            {new Date(event.created_at).toLocaleDateString()}
+                            {new Date(event.submittedAt).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
@@ -339,7 +389,7 @@ const Admin = () => {
                       {event.status === 'pending' && (
                         <>
                           <Button
-                            onClick={() => handleEventAction(event.id, 'approved')}
+                            onClick={() => handleEventAction(event._id, 'approved')}
                             className="bg-green-600 hover:bg-green-700 gap-2 flex-1 lg:flex-none"
                             size="sm"
                           >
@@ -347,7 +397,7 @@ const Admin = () => {
                             Approve
                           </Button>
                           <Button
-                            onClick={() => handleEventAction(event.id, 'rejected')}
+                            onClick={() => handleEventAction(event._id, 'rejected')}
                             variant="destructive"
                             className="gap-2 flex-1 lg:flex-none"
                             size="sm"
@@ -361,11 +411,22 @@ const Admin = () => {
                         variant="outline"
                         size="sm"
                         className="gap-2 flex-1 lg:flex-none"
-                        onClick={() => window.open(event.registration_url, '_blank')}
+                        onClick={() => window.open(event.eventUrl || event.registrationUrl, '_blank')}
                       >
                         <Eye className="w-4 h-4" />
                         View
                       </Button>
+                      {(event.status === 'approved' || event.status === 'rejected') && (
+                        <Button
+                          onClick={() => handleDeleteEvent(event._id, event.title)}
+                          variant="destructive"
+                          className="gap-2 flex-1 lg:flex-none"
+                          size="sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
