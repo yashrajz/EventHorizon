@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { apiClient } from "@/lib/mongodb";
 import { toast } from "sonner";
 
 interface ProfileData {
@@ -39,19 +39,16 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onProfileUpdate }: 
     setLoading(true);
     
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: formData.full_name,
-          bio: formData.bio,
-          location: formData.location,
-          website: formData.website,
-          email: user.email,
-          updated_at: new Date().toISOString(),
-        });
+      const response = await apiClient.updateProfile({
+        full_name: formData.full_name,
+        bio: formData.bio,
+        location: formData.location,
+        website: formData.website,
+      });
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update profile');
+      }
 
       onProfileUpdate(formData);
       toast.success("Profile updated successfully!");

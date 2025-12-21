@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/mongodb';
 import { toast } from 'sonner';
 
 const AuthCallback = () => {
@@ -11,66 +11,34 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the hash from URL (Supabase sends tokens in URL hash)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
+        // Get token from URL search params (MongoDB email verification)
+        const token = searchParams.get('token');
+        const type = searchParams.get('type');
 
-        // Also check search params (sometimes tokens are in query params)
-        const tokenHash = searchParams.get('token_hash');
-        const typeParam = searchParams.get('type');
+        if (type === 'email-verification' && token) {
+          // Handle email verification using MongoDB API
+          const response = await apiClient.verifyEmail(token);
 
-        if (type === 'signup' || typeParam === 'signup') {
-          // Handle email confirmation
-          if (tokenHash) {
-            const { error } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: 'signup'
-            });
-
-            if (error) {
-              console.error('Email confirmation error:', error);
-              toast.error('Failed to confirm email. Please try again.');
-              navigate('/signin');
-              return;
-            }
-
-            toast.success('Email confirmed successfully! You can now sign in.');
-            navigate('/signin');
-            return;
-          }
-        }
-
-        if (accessToken && refreshToken) {
-          // Handle OAuth callback or other auth flows
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-
-          if (error) {
-            console.error('Session error:', error);
-            toast.error('Authentication failed. Please try signing in again.');
+          if (!response.success) {
+            console.error('Email verification error:', response.error);
+            toast.error('Failed to verify email. The link may be invalid or expired.');
             navigate('/signin');
             return;
           }
 
-          if (data.user) {
-            toast.success('Successfully signed in!');
-            navigate('/dashboard');
-            return;
-          }
+          toast.success('Email verified successfully! You can now sign in.');
+          navigate('/signin');
+          return;
         }
 
-        // If we get here, something went wrong
-        console.log('No valid auth tokens found');
-        toast.error('Authentication link may be invalid or expired.');
+        // If we get here, no valid callback parameters found
+        console.log('No valid callback parameters found');
+        toast.error('Invalid callback link.');
         navigate('/signin');
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth callback error:', error);
-        toast.error('An error occurred during authentication.');
+        toast.error('An error occurred during verification.');
         navigate('/signin');
       } finally {
         setLoading(false);
@@ -86,10 +54,10 @@ const AuthCallback = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-foreground mb-2">
-            Confirming your account...
+            Processing request...
           </h2>
           <p className="text-muted-foreground">
-            Please wait while we verify your email address.
+            Please wait while we verify your request.
           </p>
         </div>
       </div>

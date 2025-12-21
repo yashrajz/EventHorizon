@@ -61,7 +61,7 @@ const Dashboard = () => {
             location: profileResponse.data.location,
             website: profileResponse.data.website,
             avatar_url: profileResponse.data.avatar_url,
-            created_at: profileResponse.data.createdAt.toString(),
+            created_at: profileResponse.data.createdAt?.toString() || new Date().toISOString(),
           });
         } else {
           // Create default profile from user data
@@ -78,7 +78,7 @@ const Dashboard = () => {
           setProfile(defaultProfile);
         }
 
-        // For now, use mock data for events since the existing API integration should remain
+        // For now, use empty arrays for favorite events since the API integration needs to be maintained
         setFavoriteEvents([]);
         
         // Fetch user's submitted events
@@ -90,7 +90,7 @@ const Dashboard = () => {
             date: event.startDate.toString(),
             location: event.city,
             city: event.city,
-            image_url: event.coverImage,
+            image_url: event.coverImage || `https://picsum.photos/seed/${event._id}/800/600`,
             category: event.category
           }));
           setCreatedEvents(mongoEvents);

@@ -56,12 +56,17 @@ const Profile = () => {
 
   const loadProfileData = async () => {
     try {
+      console.log('🔄 Loading profile data...');
       const [profileResponse, eventsResponse] = await Promise.all([
         apiClient.getProfile(),
         apiClient.getUserEvents()
       ]);
 
+      console.log('📋 Profile response:', profileResponse);
+      console.log('📋 Events response:', eventsResponse);
+
       if (profileResponse.success && profileResponse.data) {
+        console.log('✅ Profile data loaded:', profileResponse.data);
         setProfile(profileResponse.data);
         setFormData({
           full_name: profileResponse.data.full_name || user?.name || '',
@@ -71,6 +76,7 @@ const Profile = () => {
           avatar_url: profileResponse.data.avatar_url || user?.avatar || ''
         });
       } else {
+        console.log('⚠️ No profile data found, creating default profile');
         // Create profile if it doesn't exist
         setFormData({
           full_name: user?.name || '',
@@ -82,10 +88,13 @@ const Profile = () => {
       }
 
       if (eventsResponse.success) {
+        console.log('✅ Events data loaded:', eventsResponse.data?.length || 0, 'events');
         setUserEvents(eventsResponse.data || []);
+      } else {
+        console.log('⚠️ Failed to load events:', eventsResponse.error);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('❌ Error loading profile:', error);
       toast.error("Failed to load profile data");
     } finally {
       setLoading(false);
@@ -93,19 +102,30 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
+    // Validation
+    if (!formData.full_name.trim()) {
+      toast.error("Full name is required");
+      return;
+    }
+
     setSaving(true);
     try {
+      console.log('💾 Saving profile data:', formData);
       const response = await apiClient.updateProfile(formData);
+      console.log('📋 Update response:', response);
+      
       if (response.success) {
+        console.log('✅ Profile updated successfully');
         setProfile(response.data);
         setEditing(false);
         toast.success("Profile updated successfully!");
       } else {
-        toast.error(response.message || "Failed to update profile");
+        console.error('❌ Profile update failed:', response);
+        toast.error(response.message || response.error || "Failed to update profile");
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error("Failed to update profile");
+      console.error('❌ Error updating profile:', error);
+      toast.error("Failed to update profile. Please check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -250,7 +270,13 @@ const Profile = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setEditing(true)}
+                          onClick={() => {
+                            if (!user) {
+                              toast.error("Please sign in to edit your profile");
+                              return;
+                            }
+                            setEditing(true);
+                          }}
                           className="flex items-center gap-2"
                         >
                           <Edit3 className="w-4 h-4" />
