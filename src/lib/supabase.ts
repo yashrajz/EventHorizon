@@ -16,13 +16,41 @@ if (missingEnv) {
     }
   };
 
-  supabaseClient = new Proxy({}, handler) as SupabaseClient;
+  supabaseClient = new Proxy({}, handler) as unknown as SupabaseClient;
 } else {
   supabaseClient = createClient(supabaseUrl!, supabaseAnonKey!);
 }
 
 export const supabase = supabaseClient;
 export const isSupabaseConfigured = !missingEnv;
+
+// Event type for compatibility
+export type Event = {
+  id: number | string;
+  title: string;
+  description: string | null;
+  start_date: string;
+  end_date: string;
+  start_time?: string;
+  end_time?: string;
+  timezone?: string;
+  location: string;
+  city: string;
+  venue?: string;
+  country?: string;
+  image_url: string;
+  cover_image_url?: string;
+  category: string;
+  format?: 'in-person' | 'online' | 'hybrid';
+  tags?: string[];
+  organizer_name?: string;
+  registration_url?: string;
+  price_type?: 'free' | 'paid';
+  price_amount?: number;
+  currency?: string;
+  created_by: string;
+  created_at: string;
+};
 
 export type Database = {
   public: {

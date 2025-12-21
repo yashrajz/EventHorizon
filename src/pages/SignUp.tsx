@@ -1,248 +1,293 @@
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import SEO from "@/components/SEO";
-import { motion } from "framer-motion";
-import { Mail, Lock, User, ArrowRight } from "lucide-react";
-import { GoogleIcon } from "@/components/GoogleIcon";
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
-import ClickSpark from "@/components/ClickSpark";
-import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { useAuth } from "@/contexts/AuthContext";
-
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import SEO from "@/components/SEO";
+import { toast } from "sonner";
 
 const SignUp = () => {
+  const { signUp, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signInWithGoogle, getRedirectPath } = useAuth();
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
-    agreeToTerms: false,
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [isLoading, setIsLoading] = useState(false);
-  const from = (location.state as any)?.from || "/signin";
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
 
-    try {
-      const success = await signInWithGoogle();
-
-      if (!success) {
-        toast.error("Failed to sign in with Google");
-        return;
-      }
-
-      toast.success("Welcome! Account created with Google");
-      navigate(from || getRedirectPath(), { replace: true });
-    } catch {
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+    if (!formData.name.trim()) {
+      newErrors.name = "Full name is required";
     }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Client-side validation
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
+    
+    if (!validateForm()) {
       return;
     }
 
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
+    setLoading(true);
+
+    try {
+      const result = await signUp(formData.name, formData.email, formData.password);
+
+      if (result.success) {
+        toast.success("Account created successfully! Please check your email to verify your account.");
+        navigate("/signin", { 
+          state: { 
+            message: "Account created! Please check your email and verify your account before signing in." 
+          } 
+        });
+      } else {
+        toast.error(result.error || "Failed to create account");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    if (!formData.agreeToTerms) {
-      toast.error("You must agree to the terms and conditions");
-      return;
-    }
-
-    setIsLoading(true);
-
-    // Destroyer auth does not support signup yet
-    setTimeout(() => {
-      toast.info(
-        "Account creation is currently disabled. Please use a demo account to sign in."
-      );
-      navigate(from, { replace: true });
-      setIsLoading(false);
-    }, 800);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   return (
-    <ClickSpark sparkColor="#6b7280" sparkSize={12} sparkRadius={20} sparkCount={10} duration={500}>
-      <SEO
-        title="Sign Up"
-        description="Create your EventHorizon account to submit events and join the community."
-        url={`${window.location.origin}/signup`}
+    <>
+      <SEO 
+        title="Sign Up - EventHorizon"
+        description="Join EventHorizon to discover and create amazing events."
       />
+      <Header />
+      
+      <div className="min-h-screen bg-background flex items-center justify-center pt-20 pb-12">
+        <div className="max-w-md w-full mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Back Button */}
+            <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-accent transition-colors mb-8">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Link>
 
-      <div className="min-h-screen flex flex-col">
-        <Header />
-
-        <main className="flex-1 pt-32 pb-20">
-          <div className="mx-auto max-w-md px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-8"
-            >
-              <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-                Get <span className="text-accent">Started</span>
-              </h1>
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-foreground mb-2">Create Account</h1>
               <p className="text-muted-foreground">
-                Create your account and join the community
+                Join EventHorizon to discover and create amazing events
               </p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="glass rounded-3xl p-8"
-            >
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                {/* Full Name */}
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium text-foreground">
+                    Full Name
+                  </Label>
+                  <div className="relative mt-1">
+                    <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="name"
-                      name="name"
+                      type="text"
                       placeholder="Enter your full name"
                       value={formData.name}
-                      onChange={handleChange}
-                      required
-                      className="pl-11"
+                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      className={`pl-10 ${errors.name ? "border-red-500" : ""}`}
+                      disabled={loading}
                     />
                   </div>
+                  {errors.name && (
+                    <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                {/* Email */}
+                <div>
+                  <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                    Email Address
+                  </Label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="email"
-                      name="email"
                       type="email"
-                      placeholder="Enter your email address"
+                      placeholder="Enter your email"
                       value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className="pl-11"
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
+                      disabled={loading}
                     />
                   </div>
+                  {errors.email && (
+                    <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                {/* Password */}
+                <div>
+                  <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                    Password
+                  </Label>
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Create a strong password (8+ characters)"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password"
                       value={formData.password}
-                      onChange={handleChange}
-                      required
-                      minLength={8}
-                      className="pl-11"
+                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      className={`pl-10 pr-10 ${errors.password ? "border-red-500" : ""}`}
+                      disabled={loading}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                      disabled={loading}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                   </div>
+                  {errors.password && (
+                    <p className="text-sm text-red-500 mt-1">{errors.password}</p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                {/* Confirm Password */}
+                <div>
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                    Confirm Password
+                  </Label>
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
-                      onChange={handleChange}
-                      required
-                      className="pl-11"
+                      onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                      className={`pl-10 pr-10 ${errors.confirmPassword ? "border-red-500" : ""}`}
+                      disabled={loading}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                      disabled={loading}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                   </div>
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-red-500 mt-1">{errors.confirmPassword}</p>
+                  )}
                 </div>
-
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="agreeToTerms"
-                    checked={formData.agreeToTerms}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, agreeToTerms: checked as boolean }))
-                    }
-                  />
-                  <label htmlFor="agreeToTerms" className="text-sm text-muted-foreground">
-                    I agree to the{" "}
-                    <Link to="/terms" className="text-accent">Terms</Link> and{" "}
-                    <Link to="/privacy" className="text-accent">Privacy Policy</Link>
-                  </label>
-                </div>
-
-                <Button type="submit" disabled={isLoading} className="w-full py-6">
-                  {isLoading ? "Processing..." : <>Create Account <ArrowRight className="ml-2 h-5 w-5" /></>}
-                </Button>
-              </form>
-
-              {/* Divider */}
-              <div className="flex items-center my-6">
-                <div className="flex-1 border-t border-border"></div>
-                <span className="px-3 text-sm text-muted-foreground">or</span>
-                <div className="flex-1 border-t border-border"></div>
               </div>
 
-              {/* Google Sign Up */}
+              {/* Submit Button */}
               <Button
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                variant="outline"
-                className="w-full py-6 border-2 hover:bg-muted/50 mb-6"
+                type="submit"
+                className="w-full"
+                disabled={loading}
               >
-                <GoogleIcon className="mr-2 h-5 w-5" />
-                Continue with Google
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating Account...
+                  </div>
+                ) : (
+                  "Create Account"
+                )}
               </Button>
+            </form>
 
-              <p className="mt-6 text-center text-sm text-muted-foreground">
+            {/* Footer */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link to="/signin" className="text-accent font-semibold">
+                <Link to="/signin" className="text-accent hover:text-accent/80 font-medium">
                   Sign in
                 </Link>
               </p>
-            </motion.div>
-          </div>
-        </main>
+            </div>
 
-        <Footer />
-        <ScrollToTopButton />
-
+            {/* Terms */}
+            <div className="mt-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                By creating an account, you agree to our{" "}
+                <Link to="/terms" className="text-accent hover:text-accent/80">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link to="/privacy" className="text-accent hover:text-accent/80">
+                  Privacy Policy
+                </Link>
+              </p>
+            </div>
+          </motion.div>
+        </div>
       </div>
-    </ClickSpark>
+      
+      <Footer />
+    </>
   );
 };
 

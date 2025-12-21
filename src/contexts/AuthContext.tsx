@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { apiClient, type MongoUser, isAuthenticated as checkAuth } from "@/lib/mongodb";
 
 /**
  * Unified Authentication Context
@@ -21,138 +21,122 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  isEmailVerified?: boolean;
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  loading?: boolean; // Alias for compatibility
+  profile?: any; // User profile data
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<boolean>;
   signOut: () => void;
   hasRole: (roles: UserRole[]) => boolean;
   getRedirectPath: () => string;
+  updateProfile?: (data: any) => Promise<void>; // Profile update function
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-const STORAGE_KEY = "eventhorizon:auth:user";
-
-/**
- * Mock user database
- * Replace with real API later
- */
-const MOCK_USERS: Record<string, { password: string; user: User }> = {
-  "admin@eventhorizon.com": {
-    password: "admin123",
-    user: {
-      id: "1",
-      name: "Admin User",
-      email: "admin@eventhorizon.com",
-      role: "admin",
-    },
-  },
-  "super@eventhorizon.com": {
-    password: "super123",
-    user: {
-      id: "2",
-      name: "Super Admin",
-      email: "super@eventhorizon.com",
-      role: "superadmin",
-    },
-  },
-  "attendant@eventhorizon.com": {
-    password: "attendant123",
-    user: {
-      id: "3",
-      name: "Conference Manager",
-      email: "attendant@eventhorizon.com",
-      role: "attendant",
-    },
-  },
-  "user@example.com": {
-    password: "user123",
-    user: {
-      id: "4",
-      name: "John Doe",
-      email: "user@example.com",
-      role: "user",
-    },
-  },
-};
+// Convert MongoDB user to app user format
+const convertMongoUserToUser = (mongoUser: MongoUser): User => ({
+  id: mongoUser._id!,
+  name: mongoUser.name,
+  email: mongoUser.email,
+  role: mongoUser.role,
+  avatar: mongoUser.avatar,
+  isEmailVerified: mongoUser.isEmailVerified,
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session from localStorage
+  // Check authentication on mount
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        setUser(JSON.parse(raw));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+    const loadUser = async () => {
+      if (checkAuth()) {
+        try {
+          const response = await apiClient.getCurrentUser();
+          if (response.success && response.data) {
+            setUser(convertMongoUserToUser(response.data));
+          } else {
+            // Invalid token, clear it
+            apiClient.signout();
+          }
+        } catch (error) {
+          console.error('Error loading user:', error);
+          apiClient.signout();
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   /**
-   * Sign in using mock credentials
+   * Sign up with email and password
+   */
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
+    try {
+      const response = await apiClient.signup({ name, email, password });
+      
+      if (response.success) {
+        return { 
+          success: true, 
+          error: undefined 
+        };
+      } else {
+        return { 
+          success: false, 
+          error: response.error || 'Signup failed' 
+        };
+      }
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.message || 'Signup failed' 
+      };
+    }
+  }, []);
+
+  /**
+   * Sign in using email and password
    */
   const signIn = useCallback(async (email: string, password: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const record = MOCK_USERS[email];
-    if (!record || record.password !== password) {
-      return false;
+    try {
+      const response = await apiClient.signin({ email, password });
+      
+      if (response.success && response.user) {
+        const convertedUser = convertMongoUserToUser(response.user);
+        setUser(convertedUser);
+        return { success: true };
+      } else {
+        return { 
+          success: false, 
+          error: response.error || 'Invalid credentials' 
+        };
+      }
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.message || 'Sign in failed' 
+      };
     }
-
-    setUser(record.user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(record.user));
-    return true;
   }, []);
 
   /**
-   * Sign in with Google OAuth
+   * Sign in with Google OAuth (placeholder for future implementation)
    */
   const signInWithGoogle = useCallback(async () => {
     try {
-      if (!isSupabaseConfigured) {
-        // Mock Google sign-in for development
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        
-        const mockGoogleUser: User = {
-          id: `google_${Date.now()}`,
-          name: "Google User",
-          email: "user@gmail.com",
-          role: "user",
-          avatar: "https://lh3.googleusercontent.com/a/default-user=s96-c"
-        };
-        
-        setUser(mockGoogleUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(mockGoogleUser));
-        return true;
-      }
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-
-      if (error) {
-        console.error('Google sign-in error:', error);
-        return false;
-      }
-
-      return true;
+      // TODO: Implement Google OAuth with MongoDB backend
+      console.warn('Google OAuth not yet implemented with MongoDB backend');
+      return false;
     } catch (error) {
       console.error('Google sign-in error:', error);
       return false;
@@ -164,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const signOut = useCallback(() => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+    apiClient.signout();
   }, []);
 
   /**
@@ -191,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       case "attendant":
         return "/attendant";
       default:
-        return "/";
+        return "/dashboard";
     }
   }, [user]);
 
@@ -200,13 +184,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       isAuthenticated: !!user,
       isLoading,
+      loading: isLoading, // Alias for compatibility
+      profile: null, // Placeholder for profile data
       signIn,
+      signUp,
       signInWithGoogle,
       signOut,
       hasRole,
       getRedirectPath,
+      updateProfile: async (_data: any) => {}, // Placeholder function
     }),
-    [user, isLoading, signIn, signInWithGoogle, signOut, hasRole, getRedirectPath]
+    [user, isLoading, signIn, signUp, signInWithGoogle, signOut, hasRole, getRedirectPath]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

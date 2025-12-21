@@ -6,10 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import SEO from "@/components/SEO";
-import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 import ProfileEditModal from "@/components/ProfileEditModal";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/mongodb";
 
 interface UserProfile {
   id: string;
@@ -33,7 +33,7 @@ interface Event {
 }
 
 const Dashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [favoriteEvents, setFavoriteEvents] = useState<Event[]>([]);
   const [createdEvents, setCreatedEvents] = useState<Event[]>([]);
@@ -50,77 +50,57 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
-        // Fetch user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
-        }
-
-        if (profileData) {
-          setProfile(profileData);
-        } else {
-          // Create profile if it doesn't exist
-          const newProfile = {
+        // Fetch user profile from MongoDB
+        const profileResponse = await apiClient.getProfile();
+        if (profileResponse.success && profileResponse.data) {
+          setProfile({
             id: user.id,
-            full_name: user.user_metadata?.full_name || '',
-            email: user.email || '',
+            full_name: profileResponse.data.full_name,
+            email: user.email,
+            bio: profileResponse.data.bio,
+            location: profileResponse.data.location,
+            website: profileResponse.data.website,
+            avatar_url: profileResponse.data.avatar_url,
+            created_at: profileResponse.data.createdAt.toString(),
+          });
+        } else {
+          // Create default profile from user data
+          const defaultProfile = {
+            id: user.id,
+            full_name: user.name,
+            email: user.email,
             bio: null,
             location: null,
             website: null,
-            avatar_url: null,
+            avatar_url: user.avatar || null,
+            created_at: new Date().toISOString(),
           };
-          
-          const { error } = await supabase
-            .from('profiles')
-            .insert(newProfile);
-
-          if (!error) {
-            setProfile(newProfile as UserProfile);
-          }
+          setProfile(defaultProfile);
         }
 
-        // Fetch favorite events
-        const { data: favoritesData, error: favoritesError } = await supabase
-          .from('favorites')
-          .select(`
-            event:events (
-              id,
-              title,
-              date,
-              location,
-              city,
-              image_url,
-              category
-            )
-          `)
-          .eq('user_id', user.id)
-          .limit(6);
-
-        if (favoritesError) throw favoritesError;
+        // For now, use mock data for events since the existing API integration should remain
+        setFavoriteEvents([]);
         
-        const events = favoritesData?.map(fav => fav.event).filter(Boolean) || [];
-        setFavoriteEvents(events as unknown as Event[]);
-
-        // Fetch created events
-        const { data: createdData, error: createdError } = await supabase
-          .from('events')
-          .select('id, title, date, location, city, image_url, category')
-          .eq('created_by', user.id)
-          .limit(6);
-
-        if (createdError) throw createdError;
-        setCreatedEvents(createdData || []);
+        // Fetch user's submitted events
+        const userEventsResponse = await apiClient.getUserEvents();
+        if (userEventsResponse.success && userEventsResponse.data) {
+          const mongoEvents = userEventsResponse.data.map(event => ({
+            id: event._id as unknown as number,
+            title: event.title,
+            date: event.startDate.toString(),
+            location: event.city,
+            city: event.city,
+            image_url: event.coverImage,
+            category: event.category
+          }));
+          setCreatedEvents(mongoEvents);
+        }
 
         // Update stats
         setStats({
-          savedEvents: events.length,
-          registeredEvents: 0, // TODO: Implement when registration system is added
-          createdEvents: (createdData || []).length
+          savedEvents: 0, // Will be implemented with favorites system
+          registeredEvents: 0, // Will be implemented with registration system
+          createdEvents: userEventsResponse.success ? (userEventsResponse.data?.length || 0) : 0
         });
 
       } catch (err: any) {
@@ -226,7 +206,7 @@ const Dashboard = () => {
                   )}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
-                    Member since {new Date(profile?.created_at || user.created_at).toLocaleDateString()}
+                    Member since {new Date(profile?.created_at || new Date()).toLocaleDateString()}
                   </div>
                 </div>
 
