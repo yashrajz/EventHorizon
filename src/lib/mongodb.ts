@@ -168,6 +168,13 @@ class ApiClient {
     });
   }
 
+  async resendVerificationEmail(email: string): Promise<ApiResponse> {
+    return this.request<ApiResponse>('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   async getProfile(): Promise<ApiResponse<MongoProfile>> {
     return this.request<ApiResponse<MongoProfile>>('/profile');
   }

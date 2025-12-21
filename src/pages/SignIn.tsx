@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/mongodb";
 
 const SignIn = () => {
   const { signIn, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -21,7 +22,9 @@ const SignIn = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showResendButton, setShowResendButton] = useState(false);
 
   // Check for success message from signup
   useEffect(() => {
@@ -62,6 +65,7 @@ const SignIn = () => {
     }
 
     setLoading(true);
+    setShowResendButton(false);
 
     try {
       const result = await signIn(formData.email, formData.password);
@@ -70,8 +74,15 @@ const SignIn = () => {
         toast.success("Welcome back!");
         navigate("/dashboard", { replace: true });
       } else {
+        const errorMessage = result.error || "Invalid email or password";
+        
+        // Check if the error is about email verification
+        if (errorMessage.toLowerCase().includes('verify') || errorMessage.toLowerCase().includes('verification')) {
+          setShowResendButton(true);
+        }
+        
         setErrors({ 
-          email: result.error || "Invalid email or password" 
+          email: errorMessage 
         });
       }
     } catch (error: any) {
@@ -80,6 +91,28 @@ const SignIn = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    setResendingEmail(true);
+    try {
+      const response = await apiClient.resendVerificationEmail(formData.email);
+      if (response.success) {
+        toast.success("Verification email sent! Please check your inbox.");
+        setShowResendButton(false);
+      } else {
+        toast.error(response.error || "Failed to send verification email");
+      }
+    } catch (error) {
+      toast.error("Failed to send verification email. Please try again.");
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -231,6 +264,35 @@ const SignIn = () => {
                 )}
               </Button>
             </form>
+
+            {/* Resend Verification Email */}
+            {showResendButton && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 mb-2">
+                  Your email address is not verified. Please check your inbox for a verification email.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResendVerification}
+                  disabled={resendingEmail}
+                  className="gap-2"
+                >
+                  {resendingEmail ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Resend Verification Email
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
 
             {/* Footer */}
             <div className="mt-6 text-center">
