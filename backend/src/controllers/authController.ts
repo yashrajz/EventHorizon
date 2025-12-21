@@ -89,10 +89,8 @@ export const signup = async (req: Request, res: Response) => {
       message: emailSent 
         ? 'Account created successfully! Please check your email to verify your account.'
         : 'Account created successfully! Email verification is disabled in development mode.',
-      data: {
-        user: userResponse,
-        requiresVerification: !user.isEmailVerified
-      }
+      user: userResponse,
+      requiresVerification: !user.isEmailVerified
     });
 
   } catch (error: any) {
@@ -142,7 +140,15 @@ export const signin = async (req: Request, res: Response) => {
     }
 
     // Check password
+    console.log('🔐 Password comparison debug:');
+    console.log('  - User found:', user.email);
+    console.log('  - Email verified:', user.isEmailVerified);
+    console.log('  - Password provided:', password ? 'Yes' : 'No');
+    console.log('  - Stored password hash length:', user.password?.length || 0);
+    
     const isPasswordValid = await user.comparePassword(password);
+    console.log('  - Password comparison result:', isPasswordValid);
+    
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -151,7 +157,9 @@ export const signin = async (req: Request, res: Response) => {
     }
 
     // Generate JWT token
+    console.log('🔑 Generating JWT token for user:', user._id);
     const token = generateToken(user._id.toString());
+    console.log('🔑 JWT token generated successfully');
 
     // Remove password from response
     const userResponse = {
@@ -164,17 +172,16 @@ export const signin = async (req: Request, res: Response) => {
       createdAt: user.createdAt
     };
 
+    console.log('✅ Sending successful login response');
     res.json({
       success: true,
       message: 'Login successful',
-      data: {
-        user: userResponse,
-        token
-      }
+      user: userResponse,
+      token
     });
 
   } catch (error: any) {
-    console.error('Signin error:', error);
+    console.error('❌ Signin error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error during login'
@@ -223,10 +230,8 @@ export const verifyEmail = async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Email verified successfully! You can now login.',
-      data: {
-        user: userResponse,
-        token: jwtToken
-      }
+      user: userResponse,
+      token: jwtToken
     });
 
   } catch (error: any) {

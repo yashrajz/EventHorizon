@@ -7,6 +7,9 @@ export interface IUser extends Document {
   password: string;
   role: 'admin' | 'superadmin' | 'attendant' | 'user';
   avatar?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
   isEmailVerified: boolean;
   emailVerificationToken?: string;
   passwordResetToken?: string;
@@ -42,6 +45,9 @@ const userSchema = new Schema<IUser>({
     default: 'user'
   },
   avatar: String,
+  bio: String,
+  location: String,
+  website: String,
   isEmailVerified: {
     type: Boolean,
     default: false
@@ -55,6 +61,7 @@ const userSchema = new Schema<IUser>({
 
 // Hash password before saving
 userSchema.pre('save', async function() {
+  // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) return;
   
   const salt = await bcrypt.genSalt(12);
