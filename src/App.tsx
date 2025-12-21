@@ -27,6 +27,8 @@ import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import AdminEventReview from "./pages/AdminEventReview";
+import Profile from "./pages/Profile";
 
 // Legal / Info
 import Privacy from "./pages/Privacy";
@@ -94,13 +96,31 @@ const App = () => {
                       </RoleProtectedRoute>
                     }
                   />
-
+                  {/* Profile */}
+                  <Route 
+                    path="/profile"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["user", "attendant", "admin", "superadmin"]}>
+                        <Profile />
+                      </RoleProtectedRoute>
+                    }
+                  />
                   {/* Admin Dashboard */}
                   <Route 
                     path="/admin" 
                     element={
-                      <RoleProtectedRoute allowedRoles={["admin"]}>
+                      <RoleProtectedRoute allowedRoles={["admin", "superadmin"]}>
                         <Admin />
+                      </RoleProtectedRoute>
+                    } 
+                  />
+
+                  {/* Admin Event Review */}
+                  <Route 
+                    path="/admin/events" 
+                    element={
+                      <RoleProtectedRoute allowedRoles={["admin", "superadmin"]}>
+                        <AdminEventReview />
                       </RoleProtectedRoute>
                     } 
                   />
