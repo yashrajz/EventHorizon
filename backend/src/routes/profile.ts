@@ -1,79 +1,85 @@
 import express from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import Profile from '../models/Profile';
+import User from '../models/User';
+import { Response } from 'express';
 
 const router = express.Router();
 
 // Get profile
-router.get('/', authenticate, async (req: AuthRequest, res) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?._id;
+    const user = await User.findById(req.user?._id);
     
-    let profile = await Profile.findOne({ userId });
-    
-    // If no profile exists, create one with default values
-    if (!profile) {
-      profile = await Profile.create({
-        userId,
-        full_name: req.user?.name || 'User',
-        bio: '',
-        location: '',
-        website: '',
-        avatar_url: req.user?.avatar || ''
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
-    
-    res.json({ 
-      success: true, 
-      data: profile 
+
+    // Return profile data
+    res.json({
+      success: true,
+      data: {
+        full_name: user.name,
+        email: user.email,
+        bio: user.bio || null,
+        location: user.location || null,
+        website: user.website || null,
+        avatar_url: user.avatar || null,
+        createdAt: user.createdAt
+      }
     });
   } catch (error: any) {
-    console.error('Error fetching profile:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Failed to fetch profile' 
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching profile'
     });
   }
 });
 
 // Update profile
-router.put('/', authenticate, async (req: AuthRequest, res) => {
+router.put('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?._id;
     const { full_name, bio, location, website, avatar_url } = req.body;
     
-    let profile = await Profile.findOne({ userId });
+    const user = await User.findById(req.user?._id);
     
-    if (!profile) {
-      // Create new profile
-      profile = await Profile.create({
-        userId,
-        full_name: full_name || req.user?.name || 'User',
-        bio,
-        location,
-        website,
-        avatar_url
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
-    } else {
-      // Update existing profile
-      profile.full_name = full_name || profile.full_name;
-      if (bio !== undefined) profile.bio = bio;
-      if (location !== undefined) profile.location = location;
-      if (website !== undefined) profile.website = website;
-      if (avatar_url !== undefined) profile.avatar_url = avatar_url;
-      
-      await profile.save();
     }
-    
-    res.json({ 
-      success: true, 
-      data: profile 
+
+    // Update user fields
+    if (full_name) user.name = full_name;
+    if (bio !== undefined) user.bio = bio;
+    if (location !== undefined) user.location = location;
+    if (website !== undefined) user.website = website;
+    if (avatar_url !== undefined) user.avatar = avatar_url;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        full_name: user.name,
+        email: user.email,
+        bio: user.bio || null,
+        location: user.location || null,
+        website: user.website || null,
+        avatar_url: user.avatar || null,
+        createdAt: user.createdAt
+      }
     });
   } catch (error: any) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Failed to update profile' 
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating profile'
     });
   }
 });

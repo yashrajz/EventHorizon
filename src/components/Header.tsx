@@ -76,7 +76,7 @@ export const Header = () => {
                       <User className="h-4 w-4 text-accent-foreground" />
                     </div>
                     <span className="text-sm font-medium text-foreground">
-                      {user.name || user.email}
+                      {user.name}
                     </span>
                   </Link>
                   <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -146,7 +146,7 @@ export const Header = () => {
                         <User className="h-4 w-4 text-accent-foreground" />
                       </div>
                       <span className="text-sm font-medium text-foreground">
-                        {user.name || user.email}
+                        {user.name}
                       </span>
                     </Link>
                     <Button variant="ghost" size="sm" className="w-full" onClick={handleSignOut}>
