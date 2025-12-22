@@ -33,6 +33,7 @@ import { type Event } from "@/data/events";
 import { getCategoryGradient, getPatternOverlay, getCategoryImage } from "@/lib/imageUtils";
 import { getEventTiming, formatEventTime, getCountdownText } from "@/lib/eventTiming";
 import { getEventsAPI } from "@/services/api";
+import { eventService } from "@/services/eventService";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -86,17 +87,42 @@ const EventDetail = () => {
     
     setIsLoading(true);
     try {
-      const api = getEventsAPI();
-      const fetchedEvent = await api.fetchEventById(id);
+      console.log('🔍 Searching for event with ID:', id);
+      
+      // Try MongoDB first (user submitted events)
+      let fetchedEvent = await eventService.getEvent(id);
+      console.log('📋 MongoDB result:', fetchedEvent ? 'Found' : 'Not found');
+      
+      // If not found in MongoDB, try external APIs
+      if (!fetchedEvent) {
+        console.log('🌐 Trying external APIs...');
+        const api = getEventsAPI();
+        fetchedEvent = await api.fetchEventById(id);
+        console.log('🌐 External API result:', fetchedEvent ? 'Found' : 'Not found');
+      }
       
       if (fetchedEvent) {
+        console.log('✅ Event found:', fetchedEvent.title);
         setEvent(fetchedEvent);
         setLikesCount(Math.floor(fetchedEvent.views * 0.15));
         
-        // Fetch similar events
-        const allEvents = await api.fetchEvents({ category: fetchedEvent.category, limit: 4 });
+        // Fetch similar events from both sources
+        const [mongoEvents, externalEvents] = await Promise.all([
+          eventService.getEvents().catch(() => []),
+          (async () => {
+            try {
+              const api = getEventsAPI();
+              return await api.fetchEvents({ category: fetchedEvent.category, limit: 4 });
+            } catch {
+              return [];
+            }
+          })()
+        ]);
+        
+        const allEvents = [...mongoEvents, ...externalEvents];
         setSimilarEvents(allEvents.filter(e => e.id !== id).slice(0, 3));
       } else {
+        console.log('❌ Event not found in any source');
         setEvent(null);
       }
     } catch (error) {
@@ -246,9 +272,9 @@ const EventDetail = () => {
                 backgroundSize: '60px 60px',
               }}
             />
-            {/* Category-based static image */}
+            {/* User-provided cover image or category-based fallback */}
             <img 
-              src={getCategoryImage(event.category, event.id)}
+              src={event.coverImage || getCategoryImage(event.category, event.id)}
               alt={event.title}
               className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-700"
               onLoad={(e) => {
@@ -644,9 +670,9 @@ const EventDetail = () => {
                                   background: getCategoryGradient(similarEvent.category),
                                 }}
                               />
-                              {/* Category-based static image */}
+                              {/* User-provided cover image or category-based fallback */}
                               <img 
-                                src={getCategoryImage(similarEvent.category, similarEvent.id)}
+                                src={similarEvent.coverImage || getCategoryImage(similarEvent.category, similarEvent.id)}
                                 alt={similarEvent.title}
                                 className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500"
                                 loading="lazy"

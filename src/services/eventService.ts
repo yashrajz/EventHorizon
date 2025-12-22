@@ -1,48 +1,74 @@
 import { apiClient } from '../lib/mongodb';
 import { mockEvents, type Event as MockEvent } from '../data/events';
 
+// Helper function to safely extract date from MongoDB date
+const extractDateString = (mongoDate: string | Date): string => {
+  if (typeof mongoDate === 'string') {
+    // If it's an ISO string like "2025-12-25T04:30:00.000Z", extract the date part
+    if (mongoDate.includes('T')) {
+      return mongoDate.split('T')[0];
+    }
+    return mongoDate;
+  }
+  // If it's a Date object, convert to YYYY-MM-DD format
+  return new Date(mongoDate).toISOString().split('T')[0];
+};
+
 // Convert MongoDB event to display format
-const convertMongoEvent = (event: any): MockEvent => ({
-  id: String(event._id || event.id), // Convert to string for consistency
-  title: event.title,
-  description: event.description || '',
-  date: event.startDate || event.start_date,
-  startTime: event.startTime || '10:00',
-  endTime: event.endTime || '17:00',
-  timezone: event.timezone || 'UTC',
-  locationType: event.locationType === 'IRL' ? 'IRL' :
-                event.locationType === 'Online' ? 'Online' : 'Hybrid',
-  venue: event.venue,
-  city: event.city,
-  country: event.country,
-  tags: event.tags || [],
-  organizer: event.organizer || 'Unknown',
-  eventUrl: event.eventUrl || '',
-  registrationUrl: event.registrationUrl || '',
-  coverImage: event.coverImage || `https://picsum.photos/seed/${event._id || event.id}/800/600`,
-  category: event.category,
-  views: event.views || 0,
-  price: event.price === 'Free' ? 'Free' : 'Paid',
-  priceAmount: event.priceAmount,
-});
+const convertMongoEvent = (event: any): MockEvent => {
+  console.log('🖼️ Converting MongoDB event:', event.title, 'coverImage:', event.coverImage);
+  
+  return {
+    id: String(event._id || event.id), // Convert to string for consistency
+    title: event.title,
+    description: event.description || '',
+    // Extract just the date part, ignoring timezone issues
+    date: extractDateString(event.startDate || event.start_date || new Date()),
+    startTime: event.startTime || '10:00',
+    endTime: event.endTime || '17:00',
+    timezone: event.timezone || 'UTC',
+    locationType: event.locationType === 'IRL' ? 'IRL' :
+                  event.locationType === 'Online' ? 'Online' : 'Hybrid',
+    venue: event.venue,
+    city: event.city,
+    country: event.country,
+    tags: event.tags || [],
+    organizer: event.organizer || 'Unknown',
+    eventUrl: event.eventUrl || '',
+    registrationUrl: event.registrationUrl || '',
+    // Use the actual coverImage from MongoDB, fallback to generated image only if no coverImage provided
+    coverImage: event.coverImage || `https://picsum.photos/seed/${event._id || event.id}/800/600`,
+    category: event.category,
+    views: event.views || 0,
+    price: event.price === 'Free' ? 'Free' : 'Paid',
+    priceAmount: event.priceAmount,
+  };
+};
 
 export const eventService = {
   async getEvents(): Promise<MockEvent[]> {
     try {
+      console.log('🔄 EventService: Fetching approved events from MongoDB...');
       const response = await apiClient.getApprovedEvents();
       
+      console.log('📋 EventService: Raw response:', response);
+      
       if (!response.success || !response.data) {
-        console.warn('MongoDB API error, falling back to mock data:', response.error);
+        console.warn('⚠️ EventService: MongoDB API error, falling back to mock data:', response.error);
         return mockEvents;
       }
 
       if (response.data.length === 0) {
+        console.log('ℹ️ EventService: No approved events found, returning mock events');
         return mockEvents;
       }
 
-      return response.data.map(convertMongoEvent);
+      console.log('✅ EventService: Successfully converted', response.data.length, 'MongoDB events');
+      const convertedEvents = response.data.map(convertMongoEvent);
+      console.log('🎯 EventService: Converted events:', convertedEvents);
+      return convertedEvents;
     } catch (error) {
-      console.warn('Error fetching events from MongoDB API, using mock data:', error);
+      console.warn('❌ EventService: Error fetching events from MongoDB API, using mock data:', error);
       return mockEvents;
     }
   },

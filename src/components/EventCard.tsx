@@ -104,10 +104,10 @@ export const EventCard = ({ event, index }: EventCardProps) => {
             backgroundSize: '60px 60px',
           }}
         />
-        {/* Category-based static image */}
+        {/* User-provided cover image or category-based fallback */}
         {!imageError && (
           <img 
-            src={getCategoryImage(event.category, event.id)}
+            src={event.coverImage || getCategoryImage(event.category, event.id)}
             alt={event.title}
             className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-125 group-hover:rotate-2 opacity-0"
             loading="lazy"
@@ -116,6 +116,7 @@ export const EventCard = ({ event, index }: EventCardProps) => {
               e.currentTarget.style.opacity = '0.8';
             }}
             onError={() => {
+              console.log('❌ Image failed to load:', event.coverImage || getCategoryImage(event.category, event.id));
               setImageError(true);
               setImageLoading(false);
             }}

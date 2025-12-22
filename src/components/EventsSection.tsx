@@ -12,6 +12,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { getEventsAPI } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { filterActiveEvents } from "@/lib/eventTiming";
+import { eventService } from "@/services/eventService";
 
 export const EventsSection = () => {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -21,20 +22,43 @@ export const EventsSection = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { filters, updateFilter, resetFilters } = useSearch();
 
-  // Fetch events from API
+  // Fetch events from both MongoDB API and external APIs
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      const api = getEventsAPI();
-      const fetchedEvents = await api.fetchEvents({
-        query: filters.query,
-        location: filters.location !== "All Locations" ? filters.location : undefined,
-        category: activeCategory !== "All" ? activeCategory : undefined,
-        limit: 50,
-      });
-      setEvents(fetchedEvents);
+      console.log('🔄 Fetching events from both MongoDB and external APIs...');
+      
+      // Fetch from both sources simultaneously
+      const [mongoEvents, externalEvents] = await Promise.all([
+        // MongoDB events (user submitted, admin approved)
+        eventService.getEvents().catch(error => {
+          console.warn('MongoDB API failed:', error);
+          return [];
+        }),
+        // External API events
+        (async () => {
+          try {
+            const api = getEventsAPI();
+            return await api.fetchEvents({
+              query: filters.query,
+              location: filters.location !== "All Locations" ? filters.location : undefined,
+              category: activeCategory !== "All" ? activeCategory : undefined,
+              limit: 50,
+            });
+          } catch (error) {
+            console.warn('External API failed:', error);
+            return [];
+          }
+        })()
+      ]);
+
+      // Combine events from both sources
+      const allEvents = [...mongoEvents, ...externalEvents];
+      console.log('✅ Combined events:', mongoEvents.length, 'from MongoDB +', externalEvents.length, 'from external APIs =', allEvents.length, 'total');
+      
+      setEvents(allEvents);
     } catch (error) {
-      console.error('Failed to fetch events:', error);
+      console.error('❌ Failed to fetch events:', error);
       toast({
         title: "Error loading events",
         description: "Failed to fetch events. Please try again.",
