@@ -5,22 +5,38 @@ EventHorizon is a full-stack event management platform that allows users to disc
 
 ---
 
+## Screenshots
+
+### Homepage Hero Section
+![Homepage Hero](./public/Hero%20section.png)
+
+### Upcoming Events
+![Upcoming Events](./public/Event%20Section.png)
+
+### User Dashboard
+![User Dashboard](./public/Profile%20Section.png)
+
+### Contact Page
+![Contact Page](./public/Contact%20Page.png)
+
+---
+
 ## Table of Contents
 1. [Project Overview](#project-overview)
-2. [Architecture](#architecture)
-3. [Data Flow Diagrams (DFD)](#data-flow-diagrams)
-		- [Level 0](#dfd-level-0)
-		- [Level 1](#dfd-level-1)
-		- [Level 2](#dfd-level-2)
-4. [Tech Stack](#tech-stack)
-5. [Setup Instructions](#setup-instructions)
-6. [API Integration](#api-integration)
-7. [Database Schema](#database-schema)
-8. [Features](#features)
-9. [Folder Structure](#folder-structure)
-10. [Contributing](#contributing)
-11. [License](#license)
-12. [Admin Dashboard](#admin-dashboard)
+2. [Screenshots](#screenshots)
+3. [Architecture](#architecture)
+4. [Data Flow Diagrams (DFD)](#data-flow-diagrams)
+    - [Level 0](#dfd-level-0)
+    - [Level 2](#dfd-level-2)
+5. [Tech Stack](#tech-stack)
+6. [Setup Instructions](#setup-instructions)
+7. [API Integration](#api-integration)
+8. [Database Schema](#database-schema)
+9. [Features](#features)
+10. [Folder Structure](#folder-structure)
+11. [Contributing](#contributing)
+12. [License](#license)
+13. [Admin Dashboard](#admin-dashboard)
 
 ---
 
@@ -548,32 +564,6 @@ PROFILE
 
 ---
 
-
----
-
-## Contributing
-1. Fork the repo
-2. Create a feature branch
-3. Commit your changes
-4. Open a pull request
-
----
-
-## License
-MIT
-
----
-
-## Flowchart/DFD Visuals
-For full DFD diagrams, see the [DFD Visuals](#data-flow-diagrams) section above. You can use tools like draw.io or Lucidchart to visualize these diagrams for presentations or documentation.
-
----
-
-## Contact
-For questions, open an issue or contact us.
-
----
-
 ## Authentication System - Quick Reference
 
 ### 🛡️ Overview
@@ -736,4 +726,29 @@ const { user, signIn, signOut, hasRole } = useAuth();
 - If you see "Access Denied" on /admin, make sure you are logged in as the SuperUser.
 - If events do not load, check backend API and MongoDB connection.
 
+
 ---
+
+## Contributing
+1. Fork the repo
+2. Create a feature branch
+3. Commit your changes
+4. Open a pull request
+
+---
+
+## License
+MIT
+
+---
+
+## Flowchart/DFD Visuals
+For full DFD diagrams, see the [DFD Visuals](#data-flow-diagrams) section above. You can use tools like draw.io or Lucidchart to visualize these diagrams for presentations or documentation.
+
+---
+
+## Contact
+For questions, open an issue or contact us.
+
+---
+
