@@ -11,7 +11,7 @@ const User = mongoose.model('User', userSchema);
 
 async function makeAdmin(email) {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://eventhorizon-admin:Qwerty%401234@eventhorizon-cluster.ki7l1se.mongodb.net/eventhorizon?retryWrites=true&w=majority';
+    const mongoUri = process.env.MONGODB_URI;
     
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
